@@ -34,10 +34,11 @@ services:
         generateValue: true
 
   # Frontend static service served on Render
-  - type: static
+  - type: web
     name: sonexa-frontend
+    runtime: static
     buildCommand: npm run build
-    publishDir: dist
+    staticPublishPath: dist
     plan: free
     envVars:
       - key: VITE_API_URL
