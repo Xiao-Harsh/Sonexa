@@ -41,7 +41,6 @@ services:
     runtime: static
     buildCommand: npm run build
     staticPublishPath: dist
-    plan: free
     envVars:
       - key: VITE_API_URL
         sync: false # Render will prompt you to paste your backend's public URL (e.g. https://sonexa-backend.onrender.com/api)
