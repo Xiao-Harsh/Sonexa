@@ -23,11 +23,13 @@ services:
       - key: DB_PASS
         sync: false # Render will prompt you to enter your TiDB Password
       - key: REDIS_HOST
-        fromRedis:
+        fromService:
+          type: redis
           name: sonexa-redis
           property: host
       - key: REDIS_PORT
-        fromRedis:
+        fromService:
+          type: redis
           name: sonexa-redis
           property: port
       - key: JWT_SECRET
@@ -42,6 +44,4 @@ services:
     plan: free
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: sonexa-backend
-          value: url
+        sync: false # Render will prompt you to paste your backend's public URL (e.g. https://sonexa-backend.onrender.com/api)
