@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2, Music } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { musicApi } from '../../api/musicApi';
 import type { Track } from '../../api/musicApi';
 import { usePlayerStore } from '../../store/playerStore';
+import { getSearchHistory, saveSearchQuery, clearSearchHistory } from '../../utils/searchHistory';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -15,9 +17,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
   const [loading, setLoading] = useState(false);
   const { setQueue, playTrack } = usePlayerStore();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const navigate = useNavigate();
+  const [historyList, setHistoryList] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
+      setHistoryList(getSearchHistory());
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
       setQuery('');
@@ -60,6 +65,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
     return () => clearTimeout(timer);
   }, [query]);
 
+  const handleSearchSubmit = () => {
+    if (query.trim()) {
+      saveSearchQuery(query.trim());
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -72,7 +85,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 border-b border-white/5 flex items-center gap-3">
-          <Search className="w-5 h-5 text-neutral-400 shrink-0" />
+          <button
+            type="button"
+            onClick={handleSearchSubmit}
+            className="p-1 hover:bg-white/5 rounded-lg text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
+            title="Search on Explore Page"
+          >
+            <Search className="w-5 h-5" />
+          </button>
           <input
             ref={inputRef}
             type="text"
@@ -81,6 +101,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 onClose();
+              } else if (e.key === 'Enter') {
+                handleSearchSubmit();
               }
             }}
             placeholder="Search songs, albums, artists..."
@@ -121,6 +143,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                 <div
                   key={track.id}
                   onClick={() => {
+                    saveSearchQuery(query);
                     setQueue(results);
                     playTrack(track);
                     onClose();
@@ -149,8 +172,44 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
               No results found for "{query}"
             </div>
           ) : (
-            <div className="text-center py-12 text-neutral-500 text-xs font-medium">
-              Type to search music on the Audius network
+            <div className="space-y-4 py-2 text-left">
+              {historyList.length > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between px-3 mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Recent Searches</p>
+                    <button 
+                      onClick={() => {
+                        clearSearchHistory();
+                        setHistoryList([]);
+                      }}
+                      className="text-[10px] text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    {historyList.map((item, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          setQuery(item);
+                          saveSearchQuery(item);
+                          navigate(`/search?q=${encodeURIComponent(item)}`);
+                          onClose();
+                        }}
+                        className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-all cursor-pointer text-sm font-semibold text-neutral-350 hover:text-white"
+                      >
+                        <Search className="w-4 h-4 text-neutral-500 shrink-0" />
+                        <span className="truncate">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-neutral-500 text-xs font-medium">
+                  Type to search music on the Audius network
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -4,6 +4,9 @@ import { useLibraryStore } from '../../store/libraryStore';
 
 export const AudioEngine: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fadeIntervalRef = useRef<any>(null);
+  const lastTrackIdRef = useRef<string | null>(null);
+
   const {
     queue,
     currentTrackIndex,
@@ -15,62 +18,159 @@ export const AudioEngine: React.FC = () => {
     setIsPlaying,
     nextTrack,
     setDuration,
+    sleepTimerRemaining,
+    setSleepTimer,
   } = usePlayerStore();
 
   const currentTrack = queue[currentTrackIndex];
 
-  // Initialize or change active track
+  // Cleanup fade interval on unmount
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (currentTrack) {
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-      const streamUrl = `${baseURL}/music/track/${currentTrack.id}/stream`;
-      
-      if (audio.src !== streamUrl) {
-        audio.src = streamUrl;
-        audio.load();
-        if (isPlaying) {
-          audio.play().catch((err) => {
-            console.warn('Auto-playback interrupted:', err);
-            setIsPlaying(false);
-          });
-        }
+    return () => {
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
       }
-      
-      // Log to Listening History
-      useLibraryStore.getState().logHistory(currentTrack);
-    } else {
-      audio.src = '';
-      setIsPlaying(false);
-    }
-  }, [currentTrackIndex]);
+    };
+  }, []);
 
-  // Handle Play/Pause
+  // Handle Sleep Timer Countdown
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !audio.src) return;
+    if (sleepTimerRemaining === null) return;
 
-    if (isPlaying) {
-      audio.play().catch((err) => {
-        console.warn('Playback play failed:', err);
-        setIsPlaying(false);
-      });
-    } else {
-      audio.pause();
+    if (sleepTimerRemaining <= 0) {
+      setIsPlaying(false);
+      setSleepTimer(null);
+      return;
     }
-  }, [isPlaying, setIsPlaying]);
 
-  // Handle Volume & Mute
+    const timer = setTimeout(() => {
+      setSleepTimer(sleepTimerRemaining - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [sleepTimerRemaining, setSleepTimer, setIsPlaying]);
+
+  // Handle Volume & Mute changes directly when not fading
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.volume = volume;
+    
+    if (!fadeIntervalRef.current) {
+      audio.volume = isMuted ? 0 : volume;
+    }
     audio.muted = isMuted;
   }, [volume, isMuted]);
 
-  // Handle Explicit User Seeking ONLY (prevents playback stuttering feedback loop)
+  // Unified playback & track change handler with smooth fading
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const fadeIn = () => {
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      
+      const targetVolume = isMuted ? 0 : volume;
+      let currentVol = audio.volume;
+      const step = 0.05;
+
+      fadeIntervalRef.current = setInterval(() => {
+        currentVol = Math.min(targetVolume, currentVol + step);
+        audio.volume = currentVol;
+        if (currentVol >= targetVolume) {
+          audio.volume = targetVolume;
+          clearInterval(fadeIntervalRef.current);
+          fadeIntervalRef.current = null;
+        }
+      }, 20);
+    };
+
+    const fadeOut = (onComplete: () => void) => {
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+
+      let currentVol = audio.volume;
+      const step = 0.05;
+
+      fadeIntervalRef.current = setInterval(() => {
+        currentVol = Math.max(0, currentVol - step);
+        audio.volume = currentVol;
+        if (currentVol <= 0) {
+          audio.volume = 0;
+          clearInterval(fadeIntervalRef.current);
+          fadeIntervalRef.current = null;
+          onComplete();
+        }
+      }, 20);
+    };
+
+    // Case 1: No track selected
+    if (!currentTrack) {
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      audio.src = '';
+      lastTrackIdRef.current = null;
+      return;
+    }
+
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    const streamUrl = `${baseURL}/music/track/${currentTrack.id}/stream`;
+
+    // Case 2: Track source changed
+    if (lastTrackIdRef.current !== currentTrack.id) {
+      const switchSrcAndPlay = () => {
+        audio.src = streamUrl;
+        audio.load();
+        lastTrackIdRef.current = currentTrack.id;
+
+        if (isPlaying) {
+          audio.volume = 0;
+          audio.play().then(() => {
+            fadeIn();
+          }).catch((err) => {
+            console.warn('Playback interrupted:', err);
+            setIsPlaying(false);
+          });
+        } else {
+          audio.volume = isMuted ? 0 : volume;
+        }
+      };
+
+      // Fade out previous track if currently playing
+      if (audio.src && !audio.paused) {
+        fadeOut(() => {
+          switchSrcAndPlay();
+        });
+      } else {
+        switchSrcAndPlay();
+      }
+
+      // Log to history
+      useLibraryStore.getState().logHistory(currentTrack);
+      return;
+    }
+
+    // Case 3: Play/Pause state toggled (same track)
+    if (isPlaying) {
+      if (audio.paused) {
+        audio.volume = 0;
+        audio.play().then(() => {
+          fadeIn();
+        }).catch((err) => {
+          console.warn('Play request failed:', err);
+          setIsPlaying(false);
+        });
+      } else {
+        // If already playing, ensure target volume is faded to
+        fadeIn();
+      }
+    } else {
+      if (!audio.paused) {
+        fadeOut(() => {
+          audio.pause();
+        });
+      }
+    }
+  }, [currentTrack, isPlaying]);
+
+  // Handle Explicit User Seeking
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -84,7 +184,6 @@ export const AudioEngine: React.FC = () => {
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    // Update store currentTime continuously without triggering an audio seek loop
     usePlayerStore.setState({ currentTime: audio.currentTime });
   };
 

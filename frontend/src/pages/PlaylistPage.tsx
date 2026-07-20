@@ -92,7 +92,7 @@ export const PlaylistPage: React.FC = () => {
         {tracks.length > 0 && (
           <button
             onClick={handlePlayPlaylist}
-            className="flex items-center gap-2 px-6 py-3.5 bg-white hover:bg-neutral-200 active:scale-95 text-black rounded-full text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer shrink-0"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-neutral-200 active:scale-95 text-black rounded-full text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer shrink-0 w-full sm:w-auto"
           >
             <Play className="w-4 h-4 fill-current" />
             Play Playlist
@@ -164,7 +164,7 @@ export const PlaylistPage: React.FC = () => {
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => removeTrackFromPlaylist(currentPlaylist.id, track.id)}
-                        className="p-1.5 opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-rose-400 rounded transition-all cursor-pointer"
+                        className="p-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-neutral-500 hover:text-rose-400 rounded transition-all cursor-pointer"
                         title="Remove Track"
                       >
                         <Trash2 className="w-4 h-4" />

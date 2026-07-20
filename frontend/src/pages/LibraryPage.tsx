@@ -119,7 +119,7 @@ export const LibraryPage: React.FC = () => {
                     e.preventDefault();
                     deletePlaylist(playlist.id);
                   }}
-                  className="absolute top-7 right-7 p-2 bg-neutral-900/80 border border-white/10 rounded-full text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                  className="absolute top-7 right-7 p-2 bg-neutral-900/80 border border-white/10 rounded-full text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
                   title="Delete Playlist"
                 >
                   <Trash2 className="w-4 h-4" />

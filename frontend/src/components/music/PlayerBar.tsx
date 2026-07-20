@@ -18,6 +18,7 @@ import {
   ChevronUp,
   ChevronDown,
   X,
+  Timer,
 } from 'lucide-react';
 
 export const PlayerBar: React.FC = () => {
@@ -40,12 +41,36 @@ export const PlayerBar: React.FC = () => {
     toggleShuffle,
     toggleRepeat,
     playTrack,
+    sleepTimerRemaining,
+    setSleepTimer,
   } = usePlayerStore();
 
   const { favorites, likeTrack, unlikeTrack } = useLibraryStore();
 
   const [showQueue, setShowQueue] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showTimerMenu, setShowTimerMenu] = useState(false);
+  const timerMenuRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (timerMenuRef.current && !timerMenuRef.current.contains(e.target as Node)) {
+        setShowTimerMenu(false);
+      }
+    };
+    if (showTimerMenu) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showTimerMenu]);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   const currentTrack = queue[currentTrackIndex];
 
@@ -81,12 +106,12 @@ export const PlayerBar: React.FC = () => {
         initial={{ y: 96, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-        className="fixed bottom-4 left-4 right-4 h-20 bg-[#141414]/95 border border-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-between px-6 z-50 select-none shadow-2xl"
+        className="fixed bottom-20 md:bottom-4 left-4 right-4 h-20 bg-[#141414]/95 border border-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-between px-6 z-50 select-none shadow-2xl"
       >
         {/* LEFT: Artwork + Title + Like */}
         <div
           onClick={() => setIsExpanded(true)}
-          className="flex items-center gap-4 w-1/4 min-w-[220px] cursor-pointer group"
+          className="flex items-center gap-4 w-full md:w-1/4 md:min-w-[220px] cursor-pointer group overflow-hidden"
         >
           <div className="w-12 h-12 bg-neutral-900 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
             {artworkUrl ? (
@@ -103,7 +128,7 @@ export const PlayerBar: React.FC = () => {
             )}
           </div>
 
-          <div className="text-left overflow-hidden">
+          <div className="text-left overflow-hidden flex-1 md:flex-none">
             <h4 className="font-bold text-xs text-white truncate w-full group-hover:text-white" title={currentTrack.title}>
               {currentTrack.title}
             </h4>
@@ -114,7 +139,7 @@ export const PlayerBar: React.FC = () => {
 
           <button
             onClick={handleHeartClick}
-            className={`p-1.5 transition-colors cursor-pointer ${isLiked ? 'text-rose-500' : 'text-neutral-500 hover:text-white'
+            className={`hidden md:block p-1.5 transition-colors cursor-pointer shrink-0 ${isLiked ? 'text-rose-500' : 'text-neutral-500 hover:text-white'
               }`}
             title={isLiked ? 'Unlike' : 'Like'}
           >
@@ -122,8 +147,8 @@ export const PlayerBar: React.FC = () => {
           </button>
         </div>
 
-        {/* CENTER: Playback Controls & Timeline */}
-        <div className="flex flex-col items-center gap-1.5 flex-1 max-w-xl">
+        {/* CENTER: Playback Controls & Timeline (hidden on mobile) */}
+        <div className="hidden md:flex flex-col items-center gap-1.5 flex-1 max-w-xl">
           <div className="flex items-center gap-5">
             <button
               onClick={toggleShuffle}
@@ -201,41 +226,136 @@ export const PlayerBar: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT: Volume & Action Icons */}
-        <div className="flex items-center gap-3 w-1/4 justify-end min-w-[180px]">
+        {/* RIGHT: Volume & Action Icons (simplified on mobile) */}
+        <div className="flex items-center gap-3.5 sm:gap-4 md:w-1/4 justify-end min-w-0 md:min-w-[180px] shrink-0">
+          {/* Mobile Heart Button */}
           <button
-            onClick={toggleMute}
-            className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer"
-            title={isMuted ? 'Unmute' : 'Mute'}
+            onClick={handleHeartClick}
+            className={`md:hidden p-1.5 transition-colors cursor-pointer shrink-0 ${isLiked ? 'text-rose-500' : 'text-neutral-500'}`}
+            title={isLiked ? 'Unlike' : 'Like'}
           >
-            {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={isMuted ? 0 : volume}
-            onChange={handleVolumeChange}
-            className="w-20 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none accent-white hover:bg-neutral-700 transition-all"
-          />
-
-          <button
-            onClick={() => setShowQueue(!showQueue)}
-            className={`p-1.5 transition-colors cursor-pointer ml-1 ${showQueue ? 'text-white bg-white/10 rounded-lg' : 'text-neutral-400 hover:text-white'
-              }`}
-            title="Up Next Queue"
-          >
-            <ListMusic className="w-4 h-4" />
+            <Heart className={`w-4.5 h-4.5 ${isLiked ? 'fill-current' : ''}`} />
           </button>
 
+          {/* Mobile Play/Pause Button */}
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer"
-            title="Expand Full View"
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePlay();
+            }}
+            className="md:hidden p-2.5 bg-white text-black rounded-full shadow-lg cursor-pointer flex items-center justify-center shrink-0"
+            title={isPlaying ? 'Pause' : 'Play'}
           >
-            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            {isPlaying ? (
+              <Pause className="w-3.5 h-3.5 fill-current" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+            )}
           </button>
+          
+          {/* Mobile Next Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              nextTrack();
+            }}
+            className="md:hidden p-1.5 text-neutral-450 hover:text-white transition-colors cursor-pointer shrink-0"
+            title="Next"
+          >
+            <SkipForward className="w-4.5 h-4.5 fill-current" />
+          </button>
+
+          {/* Desktop controls */}
+          <div className="hidden md:flex items-center gap-3 w-full justify-end">
+            <button
+              onClick={toggleMute}
+              className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer"
+              title={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="w-20 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none accent-white hover:bg-neutral-700 transition-all"
+            />
+
+            <div className="relative" ref={timerMenuRef}>
+              <button
+                onClick={() => setShowTimerMenu(!showTimerMenu)}
+                className={`p-1.5 transition-colors cursor-pointer flex items-center gap-1 ${
+                  sleepTimerRemaining !== null ? 'text-indigo-400 bg-white/10 rounded-lg px-2' : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Sleep Timer"
+              >
+                <Timer className="w-4 h-4" />
+                {sleepTimerRemaining !== null && (
+                  <span className="text-[10px] font-bold font-mono">
+                    {formatTimer(sleepTimerRemaining)}
+                  </span>
+                )}
+              </button>
+
+              {showTimerMenu && (
+                <div className="absolute bottom-10 right-0 mb-2 w-32 bg-[#141414] border border-white/10 rounded-xl shadow-2xl p-1 z-50 text-xs text-left">
+                  <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest px-2.5 py-1.5 border-b border-white/5">
+                    Sleep Timer
+                  </p>
+                  <div className="mt-1 space-y-0.5">
+                    {[
+                      { label: 'Off', val: null },
+                      { label: '5 Min', val: 300 },
+                      { label: '15 Min', val: 900 },
+                      { label: '30 Min', val: 1800 },
+                      { label: '45 Min', val: 2700 },
+                      { label: '60 Min', val: 3600 },
+                    ].map((opt) => {
+                      const isActive = opt.val === null 
+                        ? sleepTimerRemaining === null 
+                        : sleepTimerRemaining !== null && Math.abs(sleepTimerRemaining - opt.val) < 10;
+                      return (
+                        <button
+                          key={opt.label}
+                          onClick={() => {
+                            setSleepTimer(opt.val);
+                            setShowTimerMenu(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
+                            isActive 
+                              ? 'bg-white/10 text-white font-semibold' 
+                              : 'text-neutral-400 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowQueue(!showQueue)}
+              className={`p-1.5 transition-colors cursor-pointer ml-1 ${showQueue ? 'text-white bg-white/10 rounded-lg' : 'text-neutral-400 hover:text-white'
+                }`}
+              title="Up Next Queue"
+            >
+              <ListMusic className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer"
+              title="Expand Full View"
+            >
+              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -305,7 +425,7 @@ export const PlayerBar: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-            className="fixed inset-0 z-[100] bg-[#090909] flex flex-col justify-between p-8 overflow-hidden"
+            className="fixed inset-0 z-[100] bg-[#090909] flex flex-col justify-between p-5 sm:p-8 overflow-hidden"
           >
             {/* Background Blur Artwork */}
             {artworkUrl && (
@@ -319,18 +439,18 @@ export const PlayerBar: React.FC = () => {
             <div className="relative z-10 flex items-center justify-between max-w-4xl mx-auto w-full">
               <button
                 onClick={() => setIsExpanded(false)}
-                className="p-3 bg-neutral-900/80 hover:bg-neutral-800 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-lg"
+                className="p-2.5 sm:p-3 bg-neutral-900/80 hover:bg-neutral-800 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-lg"
               >
                 <ChevronDown className="w-5 h-5" />
               </button>
 
-              <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">
                 NOW PLAYING
               </span>
 
               <button
                 onClick={handleHeartClick}
-                className={`p-3 bg-neutral-900/80 border border-white/10 rounded-full transition-all cursor-pointer ${isLiked ? 'text-rose-500' : 'text-neutral-400 hover:text-white'
+                className={`p-2.5 sm:p-3 bg-neutral-900/80 border border-white/10 rounded-full transition-all cursor-pointer ${isLiked ? 'text-rose-500' : 'text-neutral-400 hover:text-white'
                   }`}
               >
                 <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
@@ -338,8 +458,8 @@ export const PlayerBar: React.FC = () => {
             </div>
 
             {/* Main Center Content: Large Art + Info */}
-            <div className="relative z-10 max-w-md mx-auto w-full space-y-8 text-center my-auto">
-              <div className="w-72 h-72 md:w-80 md:h-80 mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900 flex items-center justify-center">
+            <div className="relative z-10 max-w-md mx-auto w-full space-y-4 sm:space-y-8 text-center my-auto">
+              <div className="w-52 h-52 min-[370px]:w-64 min-[370px]:h-64 sm:w-80 sm:h-80 mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900 flex items-center justify-center">
                 {artworkUrl ? (
                   <img
                     src={artworkUrl}
@@ -350,15 +470,15 @@ export const PlayerBar: React.FC = () => {
                     }}
                   />
                 ) : (
-                  <Music className="w-16 h-16 text-neutral-600" />
+                  <Music className="w-12 h-12 sm:w-16 sm:h-16 text-neutral-600" />
                 )}
               </div>
 
-              <div className="space-y-2 text-left">
-                <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight truncate">
+              <div className="space-y-1 sm:space-y-2 text-left px-2">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight truncate">
                   {currentTrack.title}
                 </h2>
-                <p className="text-neutral-400 text-sm font-medium">
+                <p className="text-neutral-400 text-xs sm:text-sm font-medium">
                   {currentTrack.user?.name}
                 </p>
               </div>
@@ -375,35 +495,35 @@ export const PlayerBar: React.FC = () => {
                     className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none accent-white hover:bg-neutral-700 transition-all"
                   />
                 </div>
-                <div className="flex justify-between text-xs font-mono text-neutral-400 font-medium">
+                <div className="flex justify-between text-[10px] sm:text-xs font-mono text-neutral-400 font-medium">
                   <span>{formatDuration(currentTime)}</span>
                   <span>{formatDuration(duration)}</span>
                 </div>
               </div>
 
               {/* Expanded Controls */}
-              <div className="flex items-center justify-center gap-8 pt-4">
+              <div className="flex items-center justify-center gap-5 sm:gap-8 pt-2 sm:pt-4">
                 <button
                   onClick={toggleShuffle}
                   className={`p-2 transition-colors cursor-pointer ${isShuffle ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
                     }`}
                 >
-                  <Shuffle className="w-5 h-5" />
+                  <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
                 <button onClick={prevTrack} className="p-2 text-white hover:scale-110 transition-transform cursor-pointer">
-                  <SkipBack className="w-6 h-6 fill-current" />
+                  <SkipBack className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                 </button>
 
                 <button
                   onClick={togglePlay}
-                  className="p-5 bg-white text-black hover:scale-105 active:scale-95 rounded-full shadow-2xl transition-all cursor-pointer"
+                  className="p-4 sm:p-5 bg-white text-black hover:scale-105 active:scale-95 rounded-full shadow-2xl transition-all cursor-pointer"
                 >
-                  {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-0.5" />}
+                  {isPlaying ? <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-current" /> : <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current ml-0.5" />}
                 </button>
 
                 <button onClick={nextTrack} className="p-2 text-white hover:scale-110 transition-transform cursor-pointer">
-                  <SkipForward className="w-6 h-6 fill-current" />
+                  <SkipForward className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                 </button>
 
                 <button
@@ -411,13 +531,13 @@ export const PlayerBar: React.FC = () => {
                   className={`p-2 transition-colors cursor-pointer ${isRepeat !== 'none' ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
                     }`}
                 >
-                  <Repeat className="w-5 h-5" />
+                  <Repeat className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
 
             {/* Standalone Volume Slider Row (Between Controls & Bottom Bar) */}
-            <div className="relative z-10 max-w-xs mx-auto w-full flex items-center justify-center gap-3.5 text-neutral-400 py-6">
+            <div className="relative z-10 max-w-xs mx-auto w-full flex items-center justify-center gap-3.5 text-neutral-400 py-3 sm:py-6">
               <button onClick={toggleMute} className="hover:text-white transition-colors cursor-pointer shrink-0">
                 {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <VolumeX className="w-4 h-4 opacity-50" />}
               </button>
@@ -436,7 +556,7 @@ export const PlayerBar: React.FC = () => {
             </div>
 
             {/* Clean Bottom Bar */}
-            <div className="relative z-10 max-w-4xl mx-auto w-full flex justify-between items-center text-xs text-neutral-500 font-medium">
+            <div className="relative z-10 max-w-4xl mx-auto w-full flex justify-between items-center text-[10px] sm:text-xs text-neutral-500 font-medium">
               <span>SONEXA HIGH FIDELITY STREAMING</span>
               <button onClick={() => setIsExpanded(false)} className="text-neutral-400 hover:text-white font-semibold cursor-pointer">
                 Close Fullscreen

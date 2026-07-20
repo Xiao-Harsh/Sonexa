@@ -174,7 +174,7 @@ export const HomePage: React.FC = () => {
       className="space-y-10 text-left"
     >
       {/* FULLY DYNAMIC & FIXED-HEIGHT HERO BANNER */}
-      <div className="relative bg-[#121212] border border-white/5 rounded-3xl overflow-hidden h-[340px] flex items-center p-10 shadow-2xl">
+      <div className="relative bg-[#121212] border border-white/5 rounded-3xl overflow-hidden h-[240px] sm:h-[340px] flex items-center p-6 sm:p-10 shadow-2xl">
         {/* Background Image Layer with Fallback */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -200,13 +200,13 @@ export const HomePage: React.FC = () => {
         {/* Hero Content Area with Fixed Alignment */}
         <div className="relative z-10 max-w-lg space-y-3 text-left">
           <div>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-neutral-400 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+            <span className="inline-block text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-neutral-400 bg-white/5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-white/5">
               {currentSlide.eyebrow}
             </span>
           </div>
 
-          <div className="min-h-[76px] flex flex-col justify-center">
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight line-clamp-2">
+          <div className="min-h-[50px] sm:min-h-[76px] flex flex-col justify-center">
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight line-clamp-2">
               {currentSlide.title}
             </h1>
           </div>
@@ -215,7 +215,7 @@ export const HomePage: React.FC = () => {
             by <strong className="text-white font-semibold">{currentSlide.artist}</strong>
           </p>
 
-          <div className="flex items-center gap-4 pt-2">
+          <div className="flex items-center gap-4 pt-1 sm:pt-2">
             <button
               onClick={() => {
                 if (currentSlide.trackObj) {
@@ -227,7 +227,7 @@ export const HomePage: React.FC = () => {
                   playTrack(tracks[0]);
                 }
               }}
-              className="px-6 py-2.5 bg-white hover:bg-neutral-200 active:scale-95 text-black font-bold text-xs rounded-full flex items-center gap-2 shadow-lg transition-all cursor-pointer shrink-0"
+              className="px-5 py-2 sm:px-6 sm:py-2.5 bg-white hover:bg-neutral-200 active:scale-95 text-black font-bold text-xs rounded-full flex items-center gap-2 shadow-lg transition-all cursor-pointer shrink-0"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Play now
@@ -243,22 +243,22 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Hero Carousel Controls */}
-        <div className="absolute bottom-6 right-8 z-10 flex items-center gap-4">
+        <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-8 z-10 flex items-center gap-4">
           {/* Pagination Dots */}
           <div className="flex items-center gap-2">
             {heroSlides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentSlideIndex(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${
-                  currentSlideIndex === idx ? 'w-5 bg-white' : 'w-2 bg-white/30 hover:bg-white/60'
+                className={`h-1.5 sm:h-2 rounded-full transition-all cursor-pointer ${
+                  currentSlideIndex === idx ? 'w-4 sm:w-5 bg-white' : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
                 }`}
               />
             ))}
           </div>
 
           {/* Navigation Arrows */}
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <button
               onClick={handlePrevSlide}
               className="p-2 rounded-full bg-white/5 hover:bg-white/15 active:scale-95 text-white transition-all cursor-pointer border border-white/5"

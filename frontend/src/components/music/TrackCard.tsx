@@ -61,7 +61,10 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, onPlay }) => {
   };
 
   return (
-    <div className="group relative bg-neutral-900/40 border border-neutral-800/80 hover:border-neutral-700/60 rounded-xl p-4 transition-all duration-300 shadow-lg hover:shadow-xl flex flex-col justify-between h-full">
+    <div
+      onClick={() => onPlay?.(track)}
+      className="group relative bg-neutral-900/40 border border-neutral-800/80 hover:border-neutral-700/60 rounded-xl p-4 transition-all duration-300 shadow-lg hover:shadow-xl flex flex-col justify-between h-full cursor-pointer"
+    >
       <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-neutral-950 flex items-center justify-center mb-4">
         {artworkUrl ? (
           <img
@@ -77,9 +80,12 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, onPlay }) => {
           <Music className="w-12 h-12 text-neutral-800" />
         )}
 
-        <div className="absolute inset-0 bg-neutral-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+        <div className="absolute inset-0 bg-neutral-950/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <button
-            onClick={() => onPlay?.(track)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay?.(track);
+            }}
             className="p-3.5 bg-white hover:bg-neutral-200 active:scale-95 text-black rounded-full shadow-2xl transition-all cursor-pointer"
           >
             <Play className="w-4 h-4 fill-current ml-0.5" />
@@ -89,7 +95,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, onPlay }) => {
         <div className="absolute top-2 right-2 flex gap-1.5 z-20">
           <button
             onClick={handleHeartClick}
-            className={`p-1.5 rounded-lg bg-neutral-900/80 hover:bg-neutral-950 border border-neutral-800/60 backdrop-blur-sm shadow-md transition-all cursor-pointer ${isLiked ? 'text-rose-500' : 'text-neutral-400 hover:text-white opacity-0 group-hover:opacity-100'
+            className={`p-1.5 rounded-lg bg-neutral-900/80 hover:bg-neutral-950 border border-neutral-800/60 backdrop-blur-sm shadow-md transition-all cursor-pointer ${isLiked ? 'text-rose-500' : 'text-neutral-400 hover:text-white opacity-100 md:opacity-0 md:group-hover:opacity-100'
               }`}
             title={isLiked ? 'Unlike' : 'Like'}
           >
@@ -99,7 +105,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, onPlay }) => {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={handlePlaylistIconClick}
-              className="p-1.5 rounded-lg bg-neutral-900/80 hover:bg-neutral-950 border border-neutral-800/60 backdrop-blur-sm shadow-md text-neutral-400 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+              className="p-1.5 rounded-lg bg-neutral-900/80 hover:bg-neutral-950 border border-neutral-800/60 backdrop-blur-sm shadow-md text-neutral-400 hover:text-white transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100"
               title="Add to Playlist"
             >
               <FolderPlus className="w-3.5 h-3.5" />

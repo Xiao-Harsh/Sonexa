@@ -80,7 +80,7 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#090909] text-white overflow-hidden select-none relative font-sans">
       {/* LEFT SIDEBAR */}
-      <aside className="w-64 shrink-0 bg-[#0e0e0e] border-r border-white/5 p-6 flex flex-col justify-between relative z-20">
+      <aside className="hidden md:flex w-64 shrink-0 bg-[#0e0e0e] border-r border-white/5 p-6 flex-col justify-between relative z-20">
         <div className="space-y-7 overflow-y-auto no-scrollbar">
           {/* Logo Header */}
           <div className="flex items-center gap-3 px-1.5">
@@ -190,15 +190,15 @@ export const Layout: React.FC = () => {
       {/* CENTER & RIGHT CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* TOP HEADER */}
-        <header className="h-16 border-b border-white/5 px-8 flex items-center justify-between shrink-0 bg-[#090909]/80 backdrop-blur-md">
+        <header className="h-16 border-b border-white/5 px-4 md:px-8 flex items-center justify-between shrink-0 bg-[#090909]/80 backdrop-blur-md">
           {/* Search bar trigger */}
           <div
             onClick={() => setIsSearchOpen(true)}
-            className="flex items-center gap-3 px-4 py-2 bg-[#141414] border border-white/5 hover:border-white/10 rounded-full w-full max-w-md cursor-pointer transition-all text-neutral-400 text-xs font-medium"
+            className="flex items-center gap-3 px-4 py-2 bg-[#141414] border border-white/5 hover:border-white/10 rounded-full w-full max-w-[200px] xs:max-w-xs sm:max-w-md cursor-pointer transition-all text-neutral-400 text-xs font-medium"
           >
-            <Search className="w-3.5 h-3.5 text-neutral-500" />
-            <span>Search for songs, albums, artists...</span>
-            <span className="ml-auto px-2 py-0.5 bg-neutral-800 text-[10px] font-bold text-neutral-400 rounded-md border border-white/5">
+            <Search className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+            <span className="truncate">Search songs, artists...</span>
+            <span className="ml-auto hidden sm:inline px-2 py-0.5 bg-neutral-800 text-[10px] font-bold text-neutral-400 rounded-md border border-white/5">
               Ctrl K
             </span>
           </div>
@@ -235,7 +235,7 @@ export const Layout: React.FC = () => {
                 </button>
                 <button
                   onClick={() => navigate('/register')}
-                  className="px-4 py-2 text-neutral-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                  className="px-4 py-2 text-neutral-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer hidden sm:block"
                 >
                   Sign Up
                 </button>
@@ -247,14 +247,14 @@ export const Layout: React.FC = () => {
         {/* MAIN BODY (Center Canvas + Right Sidebar) */}
         <div className="flex-1 flex overflow-hidden">
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 overflow-y-auto p-8 pb-32">
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-36 md:pb-32">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
           </main>
 
           {/* RIGHT SIDEBAR PANEL */}
-          <aside className="w-80 shrink-0 bg-[#090909] border-l border-white/5 p-6 overflow-y-auto space-y-7 no-scrollbar pb-32">
+          <aside className="hidden lg:block w-80 shrink-0 bg-[#090909] border-l border-white/5 p-6 overflow-y-auto space-y-7 no-scrollbar pb-32">
             {/* Recently Played / Guest Save Music Card */}
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
@@ -371,6 +371,45 @@ export const Layout: React.FC = () => {
       <PlayerBar />
       <ToastContainer />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0e0e0e]/95 backdrop-blur-md border-t border-white/5 flex items-center justify-around z-45 px-6">
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1.5 transition-colors ${
+              isActive ? 'text-white font-bold' : 'text-neutral-400'
+            }`
+          }
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Home</span>
+        </NavLink>
+
+        <NavLink
+          to="/search"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1.5 transition-colors ${
+              isActive ? 'text-white font-bold' : 'text-neutral-400'
+            }`
+          }
+        >
+          <Compass className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Explore</span>
+        </NavLink>
+
+        <NavLink
+          to="/library"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1.5 transition-colors ${
+              isActive ? 'text-white font-bold' : 'text-neutral-400'
+            }`
+          }
+        >
+          <Library className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Library</span>
+        </NavLink>
+      </nav>
     </div>
   );
 };

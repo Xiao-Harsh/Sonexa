@@ -71,7 +71,13 @@ public class AudiusClient {
 
     public String getStreamUrl(String trackId) {
         List<String> nodes = getNodesPool();
-        String node = nodes.get(0);
+        if (nodes.isEmpty()) {
+            return String.format("https://discoveryprovider.audius.co/v1/tracks/%s/stream?app_name=%s", trackId, appName);
+        }
+        // Select a node dynamically to distribute load and handle potential single-node outages
+        int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(nodes.size());
+        String node = nodes.get(randomIndex);
+        log.info("Dynamically selected Audius node [{}] to stream track [{}]", node, trackId);
         return String.format("%s/v1/tracks/%s/stream?app_name=%s", node, trackId, appName);
     }
 }
