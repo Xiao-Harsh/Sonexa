@@ -1,0 +1,60 @@
+services:
+  - type: database
+    name: sonexa-mysql
+    databaseName: music_player
+    user: root
+    plan: free
+
+  - type: redis
+    name: sonexa-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: sonexa-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: sonexa-mysql
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: sonexa-mysql
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: sonexa-mysql
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: sonexa-mysql
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: sonexa-mysql
+          property: password
+      - key: REDIS_HOST
+        fromRedis:
+          name: sonexa-redis
+          property: host
+      - key: REDIS_PORT
+        fromRedis:
+          name: sonexa-redis
+          property: port
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: sonexa-frontend
+    env: static
+    buildCommand: npm run build
+    publishDir: dist
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: sonexa-backend
+          value: url
