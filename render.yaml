@@ -34,9 +34,8 @@ services:
         generateValue: true
 
   # Frontend static service served on Render
-  - type: web
+  - type: static
     name: sonexa-frontend
-    env: static
     buildCommand: npm run build
     publishDir: dist
     plan: free
