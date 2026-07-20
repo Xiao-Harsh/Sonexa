@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=prod
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-jar", "app.jar"]
