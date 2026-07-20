@@ -23,6 +23,8 @@ services:
         sync: false # Render will prompt you to enter your TiDB User
       - key: DB_PASS
         sync: false # Render will prompt you to enter your TiDB Password
+      - key: DB_USE_SSL
+        value: "true"
       - key: REDIS_HOST
         fromService:
           type: redis
