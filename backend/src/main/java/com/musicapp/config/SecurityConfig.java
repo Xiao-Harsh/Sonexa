@@ -63,7 +63,29 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        
+        java.util.List<String> allowedPatterns = new java.util.ArrayList<>(Arrays.asList(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "https://*.vercel.app",
+            "https://*.onrender.com"
+        ));
+        
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            for (String origin : allowedOrigins.split(",")) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty()) {
+                    allowedPatterns.add(trimmed);
+                    if (trimmed.endsWith("/")) {
+                        allowedPatterns.add(trimmed.substring(0, trimmed.length() - 1));
+                    } else {
+                        allowedPatterns.add(trimmed + "/");
+                    }
+                }
+            }
+        }
+        
+        configuration.setAllowedOriginPatterns(allowedPatterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
         configuration.setExposedHeaders(Collections.singletonList("Set-Cookie"));
