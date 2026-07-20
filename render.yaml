@@ -9,7 +9,8 @@ services:
   - type: web
     name: sonexa-backend
     env: docker
-    dockerfilePath: backend/Dockerfile
+    rootDir: backend
+    dockerfilePath: Dockerfile
     plan: free
     envVars:
       - key: DB_HOST
@@ -39,6 +40,7 @@ services:
   - type: web
     name: sonexa-frontend
     runtime: static
+    rootDir: frontend
     buildCommand: npm run build
     staticPublishPath: dist
     envVars:
