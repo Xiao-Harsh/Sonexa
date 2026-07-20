@@ -1,15 +1,11 @@
 services:
-  - type: database
-    name: sonexa-mysql
-    databaseName: music_player
-    user: root
-    plan: free
-
+  # Redis on Render (used for caching Audius nodes)
   - type: redis
     name: sonexa-redis
     plan: free
     ipAllowList: []
 
+  # Backend Spring Boot Service
   - type: web
     name: sonexa-backend
     env: docker
@@ -17,25 +13,15 @@ services:
     plan: free
     envVars:
       - key: DB_HOST
-        fromDatabase:
-          name: sonexa-mysql
-          property: host
+        sync: false # Render will prompt you to enter your TiDB Host
       - key: DB_PORT
-        fromDatabase:
-          name: sonexa-mysql
-          property: port
+        value: "4000" # TiDB default port is 4000
       - key: DB_NAME
-        fromDatabase:
-          name: sonexa-mysql
-          property: database
+        sync: false # Render will prompt you to enter your TiDB Database name
       - key: DB_USER
-        fromDatabase:
-          name: sonexa-mysql
-          property: user
+        sync: false # Render will prompt you to enter your TiDB User
       - key: DB_PASS
-        fromDatabase:
-          name: sonexa-mysql
-          property: password
+        sync: false # Render will prompt you to enter your TiDB Password
       - key: REDIS_HOST
         fromRedis:
           name: sonexa-redis
@@ -47,6 +33,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
+  # Frontend static service served on Render
   - type: web
     name: sonexa-frontend
     env: static
