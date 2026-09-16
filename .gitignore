@@ -34,11 +34,8 @@ target/
 .DS_Store
 Thumbs.db
 
-# Private files / keys
+# Private files / keys / environment
 .env
-.env.production
-.env.development
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.env
