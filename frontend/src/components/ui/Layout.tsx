@@ -79,7 +79,7 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#090909] text-white overflow-hidden select-none relative font-sans">
+    <div className="flex h-full h-[100dvh] bg-[#090909] text-white overflow-hidden select-none relative font-sans">
       {/* LEFT SIDEBAR */}
       <aside className="hidden md:flex w-64 shrink-0 bg-[#0e0e0e] border-r border-white/5 p-6 flex-col justify-between relative z-20">
         <div className="space-y-7 overflow-y-auto no-scrollbar">
@@ -203,11 +203,11 @@ export const Layout: React.FC = () => {
 
       {/* CENTER & RIGHT CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-        {/* TOP HEADER - Mobile Floating Pill (Matching Image 2 / Landing Page) & Desktop Header */}
-        <header className="shrink-0 z-30 transition-all">
-          {/* MOBILE VIEW (< md): Floating Pill Navbar matching Landing Page / Image 2 */}
-          <div className="md:hidden px-4 pt-3 pb-1">
-            <div className="flex items-center justify-between gap-3 bg-[#121212]/85 backdrop-blur-2xl border border-white/[0.09] rounded-full px-5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
+        {/* TOP HEADER - Mobile Fixed Floating Pill & Desktop Glass Header */}
+        <header className="shrink-0 z-40 transition-all md:relative fixed top-0 left-0 right-0">
+          {/* MOBILE VIEW (< md): Floating Pill Navbar pinned at top */}
+          <div className="md:hidden px-4 pt-3 pb-2 bg-gradient-to-b from-[#090909] via-[#090909]/80 to-transparent pointer-events-none">
+            <div className="flex items-center justify-between gap-3 bg-[#121212]/90 backdrop-blur-2xl border border-white/[0.09] rounded-full px-5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)] pointer-events-auto">
               {/* Left Brand Wordmark */}
               <button
                 onClick={() => navigate('/app')}
@@ -310,7 +310,7 @@ export const Layout: React.FC = () => {
         {/* MAIN BODY (Center Canvas + Right Sidebar) */}
         <div className="flex-1 flex overflow-hidden">
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-36 md:pb-32">
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 pb-36 md:pb-32 overscroll-contain">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
@@ -436,7 +436,7 @@ export const Layout: React.FC = () => {
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0e0e0e]/95 backdrop-blur-md border-t border-white/5 flex items-center justify-around z-45 px-6">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0e0e0e]/95 backdrop-blur-md border-t border-white/5 flex items-center justify-around z-40 px-6">
         <NavLink
           to="/app"
           className={({ isActive }) =>
