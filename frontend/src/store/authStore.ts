@@ -45,9 +45,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         throw new Error(response.data.error?.message || 'Login failed');
       }
-    } catch (error: any) {
+    } catch (error) {
       set({ isLoading: false });
-      throw new Error(error.response?.data?.error?.message || error.message || 'Login failed');
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      throw new Error(err.response?.data?.error?.message || err.message || 'Login failed', { cause: error });
     }
   },
 
@@ -59,9 +60,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (!response.data || !response.data.success) {
         throw new Error(response.data.error?.message || 'Registration failed');
       }
-    } catch (error: any) {
+    } catch (error) {
       set({ isLoading: false });
-      throw new Error(error.response?.data?.error?.message || error.message || 'Registration failed');
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      throw new Error(err.response?.data?.error?.message || err.message || 'Registration failed', { cause: error });
     }
   },
 
@@ -104,7 +106,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: false,
       });
       return false;
-    } catch (error) {
+    } catch {
       set({
         user: null,
         accessToken: null,

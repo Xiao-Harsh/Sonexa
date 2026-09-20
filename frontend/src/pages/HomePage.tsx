@@ -99,7 +99,7 @@ export const HomePage: React.FC = () => {
           image: history[0]?.artwork?.['480x480'] || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
         },
         {
-          title: 'Your Favorites Mix',
+          title: 'Top Weekly Mix',
           subtitle: `Featuring ${artist2} & tailored tracks`,
           query: artist2,
           image: history[1]?.artwork?.['480x480'] || 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80',

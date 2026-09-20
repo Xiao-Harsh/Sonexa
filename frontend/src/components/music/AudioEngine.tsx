@@ -4,8 +4,10 @@ import { useLibraryStore } from '../../store/libraryStore';
 
 export const AudioEngine: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const fadeIntervalRef = useRef<any>(null);
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTrackIdRef = useRef<string | null>(null);
+  const fallbackIndexRef = useRef<number>(0);
+  const errorRetryCountRef = useRef<number>(0);
 
   const {
     queue,
@@ -23,6 +25,43 @@ export const AudioEngine: React.FC = () => {
   } = usePlayerStore();
 
   const currentTrack = queue[currentTrackIndex];
+
+  // Helper to build list of candidate stream URLs for the current track
+  const getStreamCandidates = (track: typeof currentTrack): string[] => {
+    if (!track) return [];
+    const candidates: string[] = [];
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+    // 1. Backend stream route (with fallback to healthy node)
+    candidates.push(`${baseURL}/music/track/${track.id}/stream`);
+
+    // 2. Direct Audius official stream redirect
+    candidates.push(`https://api.audius.co/v1/tracks/${track.id}/stream?app_name=MyWebMusicPlayer`);
+
+    // 3. Direct track stream url if present in track metadata
+    if (track.stream?.url) {
+      candidates.push(track.stream.url);
+    }
+
+    // 4. Any direct mirror stream URLs if available
+    if (track.stream?.mirrors && Array.isArray(track.stream.mirrors)) {
+      track.stream.mirrors.forEach((mirror) => {
+        if (mirror && track.stream?.url) {
+          try {
+            const originalUrl = new URL(track.stream.url);
+            const mirrorUrl = new URL(mirror);
+            originalUrl.protocol = mirrorUrl.protocol;
+            originalUrl.host = mirrorUrl.host;
+            candidates.push(originalUrl.toString());
+          } catch {
+            // Ignore malformed mirror URLs
+          }
+        }
+      });
+    }
+
+    return candidates;
+  };
 
   // Cleanup fade interval on unmount
   useEffect(() => {
@@ -78,8 +117,10 @@ export const AudioEngine: React.FC = () => {
         audio.volume = currentVol;
         if (currentVol >= targetVolume) {
           audio.volume = targetVolume;
-          clearInterval(fadeIntervalRef.current);
-          fadeIntervalRef.current = null;
+          if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+            fadeIntervalRef.current = null;
+          }
         }
       }, 20);
     };
@@ -95,8 +136,10 @@ export const AudioEngine: React.FC = () => {
         audio.volume = currentVol;
         if (currentVol <= 0) {
           audio.volume = 0;
-          clearInterval(fadeIntervalRef.current);
-          fadeIntervalRef.current = null;
+          if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+            fadeIntervalRef.current = null;
+          }
           onComplete();
         }
       }, 20);
@@ -107,16 +150,20 @@ export const AudioEngine: React.FC = () => {
       if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
       audio.src = '';
       lastTrackIdRef.current = null;
+      fallbackIndexRef.current = 0;
+      errorRetryCountRef.current = 0;
       return;
     }
 
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-    const streamUrl = `${baseURL}/music/track/${currentTrack.id}/stream`;
-
     // Case 2: Track source changed
     if (lastTrackIdRef.current !== currentTrack.id) {
+      fallbackIndexRef.current = 0;
+      errorRetryCountRef.current = 0;
+      const candidates = getStreamCandidates(currentTrack);
+      const initialSrc = candidates[0] || '';
+
       const switchSrcAndPlay = () => {
-        audio.src = streamUrl;
+        audio.src = initialSrc;
         audio.load();
         lastTrackIdRef.current = currentTrack.id;
 
@@ -126,7 +173,7 @@ export const AudioEngine: React.FC = () => {
             fadeIn();
           }).catch((err) => {
             console.warn('Playback interrupted:', err);
-            setIsPlaying(false);
+            // Don't disable isPlaying on browser autoplay restrictions, keep ready
           });
         } else {
           audio.volume = isMuted ? 0 : volume;
@@ -155,10 +202,8 @@ export const AudioEngine: React.FC = () => {
           fadeIn();
         }).catch((err) => {
           console.warn('Play request failed:', err);
-          setIsPlaying(false);
         });
       } else {
-        // If already playing, ensure target volume is faded to
         fadeIn();
       }
     } else {
@@ -168,6 +213,7 @@ export const AudioEngine: React.FC = () => {
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrack, isPlaying]);
 
   // Handle Explicit User Seeking
@@ -197,12 +243,47 @@ export const AudioEngine: React.FC = () => {
     nextTrack();
   };
 
+  // Robust Error Handler: Automatic stream failover to fallback mirror, or skip to next track
+  const handleError = () => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+
+    const candidates = getStreamCandidates(currentTrack);
+    fallbackIndexRef.current += 1;
+
+    if (fallbackIndexRef.current < candidates.length) {
+      const nextCandidate = candidates[fallbackIndexRef.current];
+      console.warn(
+        `Stream error on track "${currentTrack.title}". Trying fallback stream (${fallbackIndexRef.current + 1}/${candidates.length}): ${nextCandidate}`
+      );
+      audio.src = nextCandidate;
+      audio.load();
+      if (isPlaying) {
+        audio.play().catch((err) => {
+          console.warn('Fallback stream play attempt failed:', err);
+        });
+      }
+    } else {
+      // All fallback stream candidate URLs failed for this track
+      errorRetryCountRef.current += 1;
+      console.error(
+        `Unable to play track "${currentTrack.title}". All stream mirrors exhausted. Auto-skipping to next song.`
+      );
+      
+      // Auto skip to next track so music never stops
+      setTimeout(() => {
+        nextTrack();
+      }, 500);
+    }
+  };
+
   return (
     <audio
       ref={audioRef}
       onTimeUpdate={handleTimeUpdate}
       onLoadedMetadata={handleLoadedMetadata}
       onEnded={handleEnded}
+      onError={handleError}
       preload="auto"
     />
   );

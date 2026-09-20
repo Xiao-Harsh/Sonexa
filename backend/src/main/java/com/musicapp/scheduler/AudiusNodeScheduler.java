@@ -72,9 +72,8 @@ public class AudiusNodeScheduler {
                 if (size == null || size == 0) {
                     log.error("CRITICAL ALERT: Audius node network completely unreachable! Populating fallback Bootstrap Nodes in Redis.");
                     List<String> fallbacks = List.of(
-                            "https://discoveryprovider.audius.co",
-                            "https://creatornode2.audius.co",
-                            "https://audius-dp.net.ua"
+                            "https://api.audius.co",
+                            "https://discoveryprovider.audius.co"
                     );
                     redisTemplate.opsForList().rightPushAll(REDIS_KEY, fallbacks.toArray());
                 } else {

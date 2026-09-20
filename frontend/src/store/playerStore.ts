@@ -30,6 +30,30 @@ interface PlayerState {
   toggleRepeat: () => void;
 }
 
+const getInitialVolume = (): number => {
+  try {
+    const saved = localStorage.getItem('sonexa_player_volume');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+        return parsed;
+      }
+    }
+  } catch {
+    // localStorage unavailable
+  }
+  // Realistic music platform default: 35% (comfortable, non-ear-blasting)
+  return 0.35;
+};
+
+const getInitialMuted = (): boolean => {
+  try {
+    return localStorage.getItem('sonexa_player_muted') === 'true';
+  } catch {
+    return false;
+  }
+};
+
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   queue: [],
   currentTrackIndex: -1,
@@ -37,8 +61,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTime: 0,
   userSeekTime: null,
   duration: 0,
-  volume: 0.8,
-  isMuted: false,
+  volume: getInitialVolume(),
+  isMuted: getInitialMuted(),
   isShuffle: false,
   isRepeat: 'none',
   sleepTimerRemaining: null,
@@ -70,7 +94,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
 
-    let nextIndex = currentTrackIndex;
+    let nextIndex: number;
     if (isShuffle) {
       nextIndex = Math.floor(Math.random() * queue.length);
     } else {
@@ -110,9 +134,39 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setDuration: (dur) => set({ duration: dur }),
 
-  setVolume: (vol) => set({ volume: Math.max(0, Math.min(1, vol)) }),
+  setVolume: (vol) => {
+    const clamped = Math.max(0, Math.min(1, vol));
+    try {
+      localStorage.setItem('sonexa_player_volume', String(clamped));
+      if (clamped > 0) {
+        localStorage.setItem('sonexa_player_muted', 'false');
+      }
+    } catch {
+      // Ignore localStorage availability errors
+    }
+    set({
+      volume: clamped,
+      ...(clamped > 0 ? { isMuted: false } : {}),
+    });
+  },
 
-  toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+  toggleMute: () => set((state) => {
+    const nextMuted = !state.isMuted;
+    try {
+      localStorage.setItem('sonexa_player_muted', String(nextMuted));
+    } catch {
+      // Ignore localStorage availability errors
+    }
+    if (!nextMuted && state.volume === 0) {
+      try {
+        localStorage.setItem('sonexa_player_volume', '0.35');
+      } catch {
+        // Ignore localStorage availability errors
+      }
+      return { isMuted: false, volume: 0.35 };
+    }
+    return { isMuted: nextMuted };
+  }),
 
   toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
 

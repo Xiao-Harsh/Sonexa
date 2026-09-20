@@ -9,7 +9,8 @@ import {
   Plus,
   Search,
   Play,
-  LogOut
+  LogOut,
+  Heart
 } from 'lucide-react';
 import { AudioEngine } from '../music/AudioEngine';
 import { PlayerBar } from '../music/PlayerBar';
@@ -41,7 +42,7 @@ export const Layout: React.FC = () => {
     musicApi.getTrendingTracks('')
       .then((data) => setSidebarTrending(data.slice(0, 5)))
       .catch((err) => console.error('Failed to load sidebar trending', err));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchPlaylists, fetchHistory]);
 
   // Keyboard shortcut listener for ⌘ K / Ctrl K
   useEffect(() => {
@@ -92,7 +93,7 @@ export const Layout: React.FC = () => {
           {/* Navigation Links */}
           <nav className="space-y-1">
             <NavLink
-              to="/"
+              to="/app"
               className={({ isActive }) =>
                 `flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${isActive
                   ? 'bg-neutral-800/80 border border-white/10 text-white shadow-sm'
@@ -137,6 +138,19 @@ export const Layout: React.FC = () => {
               <Shuffle className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors" />
               Random Songs
             </div>
+
+            <NavLink
+              to="/library"
+              className={({ isActive }) =>
+                `flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${isActive
+                  ? 'bg-neutral-800/80 border border-white/10 text-white shadow-sm'
+                  : 'text-neutral-400 hover:bg-neutral-850 hover:text-white border border-transparent'
+                }`
+              }
+            >
+              <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+              Favorites
+            </NavLink>
           </nav>
 
           {/* PLAYLISTS SECTION */}
@@ -189,58 +203,107 @@ export const Layout: React.FC = () => {
 
       {/* CENTER & RIGHT CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-        {/* TOP HEADER */}
-        <header className="h-16 border-b border-white/5 px-4 md:px-8 flex items-center justify-between shrink-0 bg-[#090909]/80 backdrop-blur-md">
-          {/* Search bar trigger */}
-          <div
-            onClick={() => setIsSearchOpen(true)}
-            className="flex items-center gap-3 px-4 py-2 bg-[#141414] border border-white/5 hover:border-white/10 rounded-full w-full max-w-[200px] xs:max-w-xs sm:max-w-md cursor-pointer transition-all text-neutral-400 text-xs font-medium"
-          >
-            <Search className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-            <span className="truncate">Search songs, artists...</span>
-            <span className="ml-auto hidden sm:inline px-2 py-0.5 bg-neutral-800 text-[10px] font-bold text-neutral-400 rounded-md border border-white/5">
-              Ctrl K
-            </span>
+        {/* TOP HEADER - Mobile Floating Pill (Matching Image 2 / Landing Page) & Desktop Header */}
+        <header className="shrink-0 z-30 transition-all">
+          {/* MOBILE VIEW (< md): Floating Pill Navbar matching Landing Page / Image 2 */}
+          <div className="md:hidden px-4 pt-3 pb-1">
+            <div className="flex items-center justify-between gap-3 bg-[#121212]/85 backdrop-blur-2xl border border-white/[0.09] rounded-full px-5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
+              {/* Left Brand Wordmark */}
+              <button
+                onClick={() => navigate('/app')}
+                className="font-black text-[18px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
+              >
+                SONEXA
+              </button>
+
+              {/* Right Side Actions: Search Icon (on left side of sign in) + Sign In / User */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Search Icon with authentic hover effect */}
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
+                  title="Search (Ctrl+K)"
+                  aria-label="Search"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+
+                {/* Sign In / Profile Button */}
+                {isAuthenticated ? (
+                  <div
+                    onClick={() => navigate('/profile')}
+                    className="flex items-center gap-1.5 p-0.5 hover:bg-white/10 rounded-full cursor-pointer transition-all active:scale-95"
+                    title="View Profile"
+                  >
+                    <div className="w-7 h-7 rounded-full overflow-hidden shadow-md select-none">
+                      <AvatarRenderer avatarKey={user?.avatar || 'mascot1'} className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="px-4 py-1.5 bg-white hover:bg-neutral-200 text-black text-xs font-bold rounded-full transition-all cursor-pointer shadow-md active:scale-95"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Right Header Actions: User Profile or Sign In CTA */}
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <>
-                <div
-                  onClick={() => navigate('/profile')}
-                  className="flex items-center gap-2 px-2 py-1 hover:bg-neutral-850 rounded-full cursor-pointer transition-all border border-transparent hover:border-white/5"
-                  title="View Profile"
-                >
-                  <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shadow-md select-none">
-                    <AvatarRenderer avatarKey={user?.avatar || 'mascot1'} className="w-full h-full object-cover" />
-                  </div>
-                </div>
+          {/* DESKTOP VIEW (>= md): Full-width glass header with search trigger */}
+          <div className="hidden md:flex h-16 border-b border-white/5 px-8 items-center justify-between bg-[#090909]/80 backdrop-blur-md">
+            {/* Search bar trigger */}
+            <div
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-3 px-4 py-2 bg-[#141414] border border-white/5 hover:border-white/10 rounded-full w-full max-w-md cursor-pointer transition-all text-neutral-400 text-xs font-medium"
+            >
+              <Search className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+              <span className="truncate">Search songs, artists...</span>
+              <span className="ml-auto px-2 py-0.5 bg-neutral-800 text-[10px] font-bold text-neutral-400 rounded-md border border-white/5">
+                Ctrl K
+              </span>
+            </div>
 
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-neutral-400 hover:text-rose-400 hover:bg-neutral-850 rounded-full transition-all cursor-pointer"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => navigate('/login')}
-                  className="px-4 py-2 bg-white hover:bg-neutral-200 text-black text-xs font-bold rounded-full transition-all cursor-pointer shadow-md"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => navigate('/register')}
-                  className="px-4 py-2 text-neutral-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer hidden sm:block"
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
+            {/* Right Header Actions: User Profile or Sign In CTA */}
+            <div className="flex items-center gap-3">
+              {isAuthenticated ? (
+                <>
+                  <div
+                    onClick={() => navigate('/profile')}
+                    className="flex items-center gap-2 px-2 py-1 hover:bg-neutral-850 rounded-full cursor-pointer transition-all border border-transparent hover:border-white/5"
+                    title="View Profile"
+                  >
+                    <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shadow-md select-none">
+                      <AvatarRenderer avatarKey={user?.avatar || 'mascot1'} className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-neutral-400 hover:text-rose-400 hover:bg-neutral-850 rounded-full transition-all cursor-pointer"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="px-4 py-2 bg-white hover:bg-neutral-200 text-black text-xs font-bold rounded-full transition-all cursor-pointer shadow-md"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => navigate('/register')}
+                    className="px-4 py-2 text-neutral-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -255,7 +318,7 @@ export const Layout: React.FC = () => {
 
           {/* RIGHT SIDEBAR PANEL */}
           <aside className="hidden lg:block w-80 shrink-0 bg-[#090909] border-l border-white/5 p-6 overflow-y-auto space-y-7 no-scrollbar pb-32">
-            {/* Recently Played / Guest Save Music Card */}
+            {/* Recently Played / User History */}
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-sm text-white tracking-tight">Recently Played</h3>
@@ -375,10 +438,9 @@ export const Layout: React.FC = () => {
       {/* MOBILE BOTTOM NAVIGATION */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0e0e0e]/95 backdrop-blur-md border-t border-white/5 flex items-center justify-around z-45 px-6">
         <NavLink
-          to="/"
+          to="/app"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1.5 transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-neutral-400'
+            `flex flex-col items-center gap-1.5 transition-colors ${isActive ? 'text-white font-bold' : 'text-neutral-400'
             }`
           }
         >
@@ -389,8 +451,7 @@ export const Layout: React.FC = () => {
         <NavLink
           to="/search"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1.5 transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-neutral-400'
+            `flex flex-col items-center gap-1.5 transition-colors ${isActive ? 'text-white font-bold' : 'text-neutral-400'
             }`
           }
         >
@@ -401,8 +462,7 @@ export const Layout: React.FC = () => {
         <NavLink
           to="/library"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1.5 transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-neutral-400'
+            `flex flex-col items-center gap-1.5 transition-colors ${isActive ? 'text-white font-bold' : 'text-neutral-400'
             }`
           }
         >

@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { musicApi } from '../api/musicApi';
 import type { Track } from '../api/musicApi';
+import { useAuthStore } from '../store/authStore';
 import { SearchBar } from '../components/music/SearchBar';
 import { TrackCard } from '../components/music/TrackCard';
 import { Loader2, Music, Play, Pause, Heart, FolderPlus, Check, Clock } from 'lucide-react';
@@ -31,6 +32,8 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
   const isCurrent = currentTrack?.id === track.id;
   const isLiked = favorites.some((f) => f.id === track.id);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -47,6 +50,12 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
+      showToast('Please sign in to add songs to your favorites', 'info');
+      navigate('/login');
+      return;
+    }
     if (isLiked) {
       unlikeTrack(track.id);
       showToast(`Removed from Liked Songs`, 'info');
@@ -217,13 +226,8 @@ export const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [searched, setSearched] = useState(false);
-  const [query, setQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-
-  // Fetch search history on mount
-  useEffect(() => {
-    setRecentSearches(getSearchHistory());
-  }, []);
+  const [query, setQuery] = useState(queryParam || '');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => getSearchHistory());
 
   // Fetch default trending tracks on load
   useEffect(() => {
@@ -242,16 +246,13 @@ export const SearchPage: React.FC = () => {
     fetchExploreData();
   }, []);
 
-  const handleSearch = useCallback(async (q: string) => {
-    setQuery(q);
-    setSearchParams(q ? { q } : {});
-    if (!q) {
+  const executeSearch = useCallback(async (q: string) => {
+    if (!q.trim()) {
       setTracks([]);
       setSearched(false);
       return;
     }
 
-    // Save search history
     saveSearchQuery(q);
     setRecentSearches(getSearchHistory());
 
@@ -266,19 +267,28 @@ export const SearchPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [showToast, setSearchParams]);
+  }, [showToast]);
+
+  const handleSearch = (q: string) => {
+    setQuery(q);
+    setSearchParams(q ? { q } : {});
+  };
 
   // Sync search parameters from URL on load/change
   useEffect(() => {
-    if (queryParam && queryParam !== query) {
-      handleSearch(queryParam);
-    } else if (!queryParam && query) {
-      // Clear search state if search query removed from URL
-      setQuery('');
-      setTracks([]);
-      setSearched(false);
-    }
-  }, [queryParam, query, handleSearch]);
+    const timer = setTimeout(() => {
+      if (queryParam) {
+        setQuery(queryParam);
+        void executeSearch(queryParam);
+      } else {
+        setQuery('');
+        setTracks([]);
+        setSearched(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [queryParam, executeSearch]);
 
   const dailyMixes = [
     {

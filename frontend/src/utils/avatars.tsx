@@ -26,6 +26,7 @@ export const Mascot5: React.FC<{ className?: string }> = ({ className = "w-full 
 );
 
 // Map components to selection keys
+// eslint-disable-next-line react-refresh/only-export-components
 export const avatarsMap: Record<string, React.FC<{ className?: string }>> = {
   mascot1: Mascot1,
   mascot2: Mascot2,

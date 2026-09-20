@@ -23,7 +23,7 @@ export const ProfilePage: React.FC = () => {
     fetchPlaylists();
     fetchFavorites();
     fetchHistory();
-  }, []);
+  }, [fetchPlaylists, fetchFavorites, fetchHistory]);
 
   const currentAvatar = user?.avatar || 'mascot1';
 

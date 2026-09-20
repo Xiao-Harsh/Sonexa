@@ -42,33 +42,37 @@ export const useKeyboardControls = () => {
           showToast(isPlaying ? 'Playback Paused' : 'Playback Resumed', 'info');
           break;
 
-        case 'arrowright': // Seek forward 10s
+        case 'arrowright': { // Seek forward 10s
           e.preventDefault();
           const newTimeForward = Math.min(duration, currentTime + 10);
           seekTo(newTimeForward);
           showToast('Seek Forward +10s', 'info');
           break;
+        }
 
-        case 'arrowleft': // Seek backward 10s
+        case 'arrowleft': { // Seek backward 10s
           e.preventDefault();
           const newTimeBackward = Math.max(0, currentTime - 10);
           seekTo(newTimeBackward);
           showToast('Seek Backward -10s', 'info');
           break;
+        }
 
-        case 'arrowup': // Volume up 5%
+        case 'arrowup': { // Volume up 5%
           e.preventDefault();
           const newVolUp = Math.min(1, volume + 0.05);
           setVolume(newVolUp);
           showToast(`Volume: ${Math.round(newVolUp * 100)}%`, 'info');
           break;
+        }
 
-        case 'arrowdown': // Volume down 5%
+        case 'arrowdown': { // Volume down 5%
           e.preventDefault();
           const newVolDown = Math.max(0, volume - 0.05);
           setVolume(newVolDown);
           showToast(`Volume: ${Math.round(newVolDown * 100)}%`, 'info');
           break;
+        }
 
         case 'm': // Toggle mute
           e.preventDefault();

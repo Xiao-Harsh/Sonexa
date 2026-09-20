@@ -17,7 +17,7 @@ export const PlaylistPage: React.FC = () => {
     if (id) {
       fetchPlaylistDetails(Number(id));
     }
-  }, [id]);
+  }, [id, fetchPlaylistDetails]);
 
   if (isLoading && !currentPlaylist) {
     return (

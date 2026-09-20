@@ -21,17 +21,25 @@ export interface Playlist {
   updatedAt: string;
 }
 
-export const mapDbTrackToTrack = (dbTrack: any): Track => {
+export interface DbTrackPayload {
+  audiusTrackId: string;
+  title: string;
+  artistName?: string;
+  durationSeconds?: number;
+  coverArtUrl?: string;
+}
+
+export const mapDbTrackToTrack = (dbTrack: DbTrackPayload): Track => {
   return {
     id: dbTrack.audiusTrackId,
     title: dbTrack.title,
-    duration: dbTrack.durationSeconds,
+    duration: dbTrack.durationSeconds || 0,
     genre: '',
     user: {
-      name: dbTrack.artistName,
+      name: dbTrack.artistName || 'Unknown Artist',
       username: '',
       artwork: {
-        "150x150": dbTrack.coverArtUrl,
+        "150x150": dbTrack.coverArtUrl || '',
       }
     },
     artwork: {

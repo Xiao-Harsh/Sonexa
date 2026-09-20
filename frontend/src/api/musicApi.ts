@@ -21,6 +21,10 @@ export interface Track {
     "480x480"?: string;
     "1000x1000"?: string;
   };
+  stream?: {
+    url?: string;
+    mirrors?: string[];
+  };
 }
 
 export const musicApi = {

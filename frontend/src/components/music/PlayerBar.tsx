@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePlayerStore } from '../../store/playerStore';
 import { useLibraryStore } from '../../store/libraryStore';
+import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
 import { formatDuration } from '../../utils/formatDuration';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,7 +13,9 @@ import {
   SkipForward,
   Shuffle,
   Repeat,
+  Repeat1,
   Volume2,
+  Volume1,
   VolumeX,
   Music,
   Heart,
@@ -22,6 +27,7 @@ import {
 } from 'lucide-react';
 
 export const PlayerBar: React.FC = () => {
+  const navigate = useNavigate();
   const {
     queue,
     currentTrackIndex,
@@ -50,21 +56,24 @@ export const PlayerBar: React.FC = () => {
   const [showQueue, setShowQueue] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showTimerMenu, setShowTimerMenu] = useState(false);
+  const [showExpandedVolume, setShowExpandedVolume] = useState(false);
   const timerMenuRef = React.useRef<HTMLDivElement | null>(null);
+  const expandedVolumeRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (timerMenuRef.current && !timerMenuRef.current.contains(e.target as Node)) {
         setShowTimerMenu(false);
       }
+      if (expandedVolumeRef.current && !expandedVolumeRef.current.contains(e.target as Node)) {
+        setShowExpandedVolume(false);
+      }
     };
-    if (showTimerMenu) {
-      document.addEventListener('mousedown', handleOutsideClick);
-    }
+    document.addEventListener('mousedown', handleOutsideClick);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [showTimerMenu]);
+  }, []);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -90,12 +99,40 @@ export const PlayerBar: React.FC = () => {
     setVolume(Number(e.target.value));
   };
 
+  const renderVolumeIcon = (className = 'w-4 h-4') => {
+    if (isMuted || volume === 0) {
+      return <VolumeX className={className} />;
+    }
+    if (volume < 0.5) {
+      return <Volume1 className={className} />;
+    }
+    return <Volume2 className={className} />;
+  };
+
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
+      useToastStore.getState().showToast('Please sign in to add songs to your favorites', 'info');
+      navigate('/login');
+      return;
+    }
     if (isLiked) {
       unlikeTrack(currentTrack.id);
     } else {
       likeTrack(currentTrack);
+    }
+  };
+
+  const handleCyclePlaybackMode = () => {
+    if (!isShuffle && isRepeat === 'none') {
+      usePlayerStore.setState({ isShuffle: true, isRepeat: 'none' });
+    } else if (isShuffle) {
+      usePlayerStore.setState({ isShuffle: false, isRepeat: 'all' });
+    } else if (isRepeat === 'all') {
+      usePlayerStore.setState({ isShuffle: false, isRepeat: 'one' });
+    } else {
+      usePlayerStore.setState({ isShuffle: false, isRepeat: 'none' });
     }
   };
 
@@ -272,7 +309,7 @@ export const PlayerBar: React.FC = () => {
               className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer"
               title={isMuted ? 'Unmute' : 'Mute'}
             >
-              {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {renderVolumeIcon('w-4 h-4')}
             </button>
             <input
               type="range"
@@ -501,66 +538,105 @@ export const PlayerBar: React.FC = () => {
                 </div>
               </div>
 
-              {/* Expanded Controls */}
+              {/* Expanded Controls: Centered 5 buttons (Shuffle/Repeat, Prev, Play, Next, Volume) */}
               <div className="flex items-center justify-center gap-5 sm:gap-8 pt-2 sm:pt-4">
+                {/* 1. Shuffle & Repeat Mode Button */}
                 <button
-                  onClick={toggleShuffle}
-                  className={`p-2 transition-colors cursor-pointer ${isShuffle ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
-                    }`}
+                  onClick={handleCyclePlaybackMode}
+                  className={`p-2 transition-colors cursor-pointer relative hover:scale-105 active:scale-95 ${
+                    isShuffle || isRepeat !== 'none' ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
+                  }`}
+                  title={
+                    isShuffle
+                      ? 'Mode: Shuffle (click for Repeat All)'
+                      : isRepeat === 'all'
+                      ? 'Mode: Repeat All (click for Repeat One)'
+                      : isRepeat === 'one'
+                      ? 'Mode: Repeat One (click for Normal)'
+                      : 'Mode: Normal (click for Shuffle)'
+                  }
                 >
-                  <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  {isRepeat === 'all' ? (
+                    <Repeat className="w-4 h-4 sm:w-5 sm:h-5" />
+                  ) : isRepeat === 'one' ? (
+                    <Repeat1 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  ) : (
+                    <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  )}
+                  {/* Subtle active indicator dot */}
+                  {(isShuffle || isRepeat !== 'none') && (
+                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
+                  )}
                 </button>
 
-                <button onClick={prevTrack} className="p-2 text-white hover:scale-110 transition-transform cursor-pointer">
+                {/* 2. Previous */}
+                <button onClick={prevTrack} className="p-2 text-white hover:scale-110 transition-transform cursor-pointer" title="Previous">
                   <SkipBack className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                 </button>
 
+                {/* 3. Play / Pause (Centered) */}
                 <button
                   onClick={togglePlay}
                   className="p-4 sm:p-5 bg-white text-black hover:scale-105 active:scale-95 rounded-full shadow-2xl transition-all cursor-pointer"
+                  title={isPlaying ? 'Pause' : 'Play'}
                 >
                   {isPlaying ? <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-current" /> : <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current ml-0.5" />}
                 </button>
 
-                <button onClick={nextTrack} className="p-2 text-white hover:scale-110 transition-transform cursor-pointer">
+                {/* 4. Next */}
+                <button onClick={nextTrack} className="p-2 text-white hover:scale-110 transition-transform cursor-pointer" title="Next">
                   <SkipForward className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                 </button>
 
-                <button
-                  onClick={toggleRepeat}
-                  className={`p-2 transition-colors cursor-pointer ${isRepeat !== 'none' ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
+                {/* 5. Volume */}
+                <div className="relative" ref={expandedVolumeRef}>
+                  <button
+                    onClick={() => setShowExpandedVolume(!showExpandedVolume)}
+                    className={`p-2 transition-colors cursor-pointer hover:scale-105 active:scale-95 ${
+                      showExpandedVolume ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
                     }`}
-                >
-                  <Repeat className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
+                    title={isMuted ? 'Muted' : `Volume: ${Math.round(volume * 100)}%`}
+                  >
+                    {renderVolumeIcon('w-4 h-4 sm:w-5 sm:h-5')}
+                  </button>
+
+                  {/* Flexible Slider pops up when clicked in the proper place below the volume button */}
+                  <AnimatePresence>
+                    {showExpandedVolume && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full right-0 mt-3 bg-[#181818]/95 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl flex items-center gap-2.5 z-50 w-48"
+                      >
+                        {/* Upward pointer arrow anchored to volume icon */}
+                        <div className="absolute -top-1.5 right-3.5 w-3 h-3 bg-[#181818] border-t border-l border-white/10 rotate-45" />
+
+                        <button
+                          onClick={toggleMute}
+                          className="relative z-10 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                          title={isMuted ? 'Unmute' : 'Mute'}
+                        >
+                          {renderVolumeIcon('w-3.5 h-3.5')}
+                        </button>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={isMuted ? 0 : volume}
+                          onChange={handleVolumeChange}
+                          className="relative z-10 w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none accent-white hover:bg-neutral-700 transition-all"
+                        />
+                        <span className="relative z-10 text-[10px] font-mono text-neutral-400 font-semibold w-7 text-right">
+                          {isMuted || volume === 0 ? '0%' : `${Math.round(volume * 100)}%`}
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
-
-            {/* Standalone Volume Slider Row (Between Controls & Bottom Bar) */}
-            <div className="relative z-10 max-w-xs mx-auto w-full flex items-center justify-center gap-3.5 text-neutral-400 py-3 sm:py-6">
-              <button onClick={toggleMute} className="hover:text-white transition-colors cursor-pointer shrink-0">
-                {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <VolumeX className="w-4 h-4 opacity-50" />}
-              </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none accent-white hover:bg-neutral-700 transition-all"
-              />
-              <button onClick={toggleMute} className="hover:text-white transition-colors cursor-pointer shrink-0">
-                <Volume2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Clean Bottom Bar */}
-            <div className="relative z-10 max-w-4xl mx-auto w-full flex justify-between items-center text-[10px] sm:text-xs text-neutral-500 font-medium">
-              <span>SONEXA HIGH FIDELITY STREAMING</span>
-              <button onClick={() => setIsExpanded(false)} className="text-neutral-400 hover:text-white font-semibold cursor-pointer">
-                Close Fullscreen
-              </button>
             </div>
           </motion.div>
         )}

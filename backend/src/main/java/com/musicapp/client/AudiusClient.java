@@ -33,7 +33,10 @@ public class AudiusClient {
             List<Object> rawNodes = redisTemplate.opsForList().range(REDIS_KEY, 0, -1);
             if (rawNodes != null && !rawNodes.isEmpty()) {
                 for (Object obj : rawNodes) {
-                    nodes.add(obj.toString());
+                    String s = obj.toString().trim();
+                    if (!s.contains("audius-dp.net.ua") && !s.contains("creatornode2.audius.co")) {
+                        nodes.add(s);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -41,9 +44,8 @@ public class AudiusClient {
         }
         
         if (nodes.isEmpty()) {
+            nodes.add("https://api.audius.co");
             nodes.add("https://discoveryprovider.audius.co");
-            nodes.add("https://creatornode2.audius.co");
-            nodes.add("https://audius-dp.net.ua");
         }
         return nodes;
     }
@@ -66,18 +68,28 @@ public class AudiusClient {
             }
         }
 
+        // Secondary fallback to primary official gateway if all selected nodes failed
+        try {
+            String fallbackUrl = "https://api.audius.co" + pathWithApp;
+            T result = restTemplate.getForObject(fallbackUrl, responseType);
+            if (result != null) {
+                return result;
+            }
+        } catch (Exception e) {
+            log.error("Fallback to https://api.audius.co also failed: {}", e.getMessage());
+        }
+
         throw new RuntimeException("All healthy Audius nodes failed to respond. Audius network is currently unreachable.");
     }
 
     public String getStreamUrl(String trackId) {
         List<String> nodes = getNodesPool();
-        if (nodes.isEmpty()) {
-            return String.format("https://discoveryprovider.audius.co/v1/tracks/%s/stream?app_name=%s", trackId, appName);
+        String selectedNode = "https://api.audius.co";
+        if (!nodes.isEmpty()) {
+            int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(nodes.size());
+            selectedNode = nodes.get(randomIndex);
         }
-        // Select a node dynamically to distribute load and handle potential single-node outages
-        int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(nodes.size());
-        String node = nodes.get(randomIndex);
-        log.info("Dynamically selected Audius node [{}] to stream track [{}]", node, trackId);
-        return String.format("%s/v1/tracks/%s/stream?app_name=%s", node, trackId, appName);
+        log.info("Selected Audius node [{}] to stream track [{}]", selectedNode, trackId);
+        return String.format("%s/v1/tracks/%s/stream?app_name=%s", selectedNode, trackId, appName);
     }
 }
