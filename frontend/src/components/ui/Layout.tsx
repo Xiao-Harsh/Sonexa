@@ -204,10 +204,10 @@ export const Layout: React.FC = () => {
       {/* CENTER & RIGHT CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* TOP HEADER - Mobile Fixed Floating Pill & Desktop Glass Header */}
-        <header className="shrink-0 z-40 transition-all md:relative fixed top-0 left-0 right-0">
+        <header className="shrink-0 z-40 transition-all md:relative fixed top-0 left-0 right-0 pointer-events-none">
           {/* MOBILE VIEW (< md): Floating Pill Navbar pinned at top */}
-          <div className="md:hidden px-4 pt-3 pb-2 bg-gradient-to-b from-[#090909] via-[#090909]/80 to-transparent pointer-events-none">
-            <div className="flex items-center justify-between gap-3 bg-[#121212]/90 backdrop-blur-2xl border border-white/[0.09] rounded-full px-5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)] pointer-events-auto">
+          <div className="md:hidden px-4 pt-3 pb-2">
+            <div className="flex items-center justify-between gap-3 apple-glass-pill rounded-full px-5 py-2.5 pointer-events-auto">
               {/* Left Brand Wordmark */}
               <button
                 onClick={() => navigate('/app')}
@@ -436,7 +436,7 @@ export const Layout: React.FC = () => {
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0e0e0e]/95 backdrop-blur-md border-t border-white/5 flex items-center justify-around z-40 px-6">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 apple-glass-bar flex items-center justify-around z-40 px-6">
         <NavLink
           to="/app"
           className={({ isActive }) =>

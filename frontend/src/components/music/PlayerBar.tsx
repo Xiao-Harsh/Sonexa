@@ -143,7 +143,7 @@ export const PlayerBar: React.FC = () => {
         initial={{ y: 96, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-        className="fixed bottom-20 md:bottom-4 left-4 right-4 h-20 bg-[#141414]/95 border border-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-between px-6 z-50 select-none shadow-2xl"
+        className="fixed bottom-20 md:bottom-4 left-4 right-4 h-20 apple-glass-pill rounded-2xl flex items-center justify-between px-6 z-50 select-none"
       >
         {/* LEFT: Artwork + Title + Like */}
         <div
