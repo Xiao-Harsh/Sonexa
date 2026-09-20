@@ -48,19 +48,30 @@ body {
 
 /* Apple Frosted Glass Utilities */
 .apple-glass-pill {
-  background: rgba(18, 18, 18, 0.55) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  /* Rich dark glass base: ensures solid dark contrast on all mobile GPUs without turning transparent/washed out */
+  background: rgba(18, 18, 18, 0.82) !important;
+  background-color: rgba(18, 18, 18, 0.82) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.16) !important;
 }
 
 .apple-glass-bar {
-  background: rgba(12, 12, 12, 0.65) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  background: rgba(12, 12, 12, 0.88) !important;
+  background-color: rgba(12, 12, 12, 0.88) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Custom Serif Italic typography utility */

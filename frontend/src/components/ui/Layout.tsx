@@ -204,10 +204,10 @@ export const Layout: React.FC = () => {
       {/* CENTER & RIGHT CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* TOP HEADER - Mobile Fixed Floating Pill & Desktop Glass Header */}
-        <header className="shrink-0 z-40 transition-all md:relative fixed top-0 left-0 right-0 pointer-events-none">
+        <header className="shrink-0 z-40 transition-all md:relative fixed top-0 left-0 right-0">
           {/* MOBILE VIEW (< md): Floating Pill Navbar pinned at top */}
           <div className="md:hidden px-4 pt-3 pb-2">
-            <div className="flex items-center justify-between gap-3 apple-glass-pill rounded-full px-5 py-2.5 pointer-events-auto">
+            <div className="flex items-center justify-between gap-3 apple-glass-pill rounded-full px-5 py-2.5">
               {/* Left Brand Wordmark */}
               <button
                 onClick={() => navigate('/app')}
