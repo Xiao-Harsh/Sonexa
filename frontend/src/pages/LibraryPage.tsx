@@ -36,15 +36,15 @@ export const LibraryPage: React.FC = () => {
       className="space-y-8 text-left relative"
     >
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Your Library</h1>
-        <p className="text-neutral-400 text-sm mt-1">Manage your saved collections and playlists</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Your Library</h1>
+        <p className="text-neutral-400 text-xs sm:text-sm mt-1">Manage your saved collections and playlists</p>
       </div>
 
-      <div className="flex items-center justify-between border-b border-white/5 pb-4 overflow-x-auto gap-4">
+      <div className="flex flex-wrap items-center justify-between border-b border-white/5 pb-4 gap-3 sm:gap-4">
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => setActiveTab('likes')}
-            className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all border cursor-pointer ${
+            className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold tracking-wide transition-all border cursor-pointer ${
               activeTab === 'likes'
                 ? 'bg-white border-white text-black shadow-md'
                 : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/10 hover:text-white'
@@ -54,7 +54,7 @@ export const LibraryPage: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('playlists')}
-            className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all border cursor-pointer ${
+            className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold tracking-wide transition-all border cursor-pointer ${
               activeTab === 'playlists'
                 ? 'bg-white border-white text-black shadow-md'
                 : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/10 hover:text-white'
@@ -67,7 +67,7 @@ export const LibraryPage: React.FC = () => {
         {activeTab === 'playlists' && (
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-neutral-200 active:scale-95 text-black rounded-full text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 bg-white hover:bg-neutral-200 active:scale-95 text-black rounded-full text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Create Playlist
@@ -82,7 +82,7 @@ export const LibraryPage: React.FC = () => {
         </div>
       ) : activeTab === 'likes' ? (
         favorites.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {favorites.map((track) => (
               <TrackCard key={track.id} track={track} />
             ))}
@@ -96,19 +96,19 @@ export const LibraryPage: React.FC = () => {
         )
       ) : (
         playlists.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {playlists.map((playlist) => (
               <div
                 key={playlist.id}
-                className="group relative bg-[#141414] border border-white/5 hover:border-white/15 rounded-2xl p-5 transition-all hover:-translate-y-1 shadow-md flex flex-col justify-between"
+                className="group relative bg-[#141414] border border-white/5 hover:border-white/15 rounded-xl sm:rounded-2xl p-4 sm:p-5 transition-all hover:-translate-y-1 shadow-md flex flex-col justify-between"
               >
-                <Link to={`/playlist/${playlist.id}`} className="space-y-4 flex-1">
+                <Link to={`/playlist/${playlist.id}`} className="space-y-3 sm:space-y-4 flex-1">
                   <div className="w-full aspect-square bg-neutral-900 border border-white/5 rounded-xl flex items-center justify-center text-neutral-500 group-hover:text-white transition-colors">
-                    <ListMusic className="w-10 h-10" />
+                    <ListMusic className="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
-                  <div className="text-left">
-                    <h3 className="font-bold text-white text-base truncate">{playlist.name}</h3>
-                    <p className="text-xs text-neutral-400 mt-1">
+                  <div className="text-left min-w-0">
+                    <h3 className="font-bold text-white text-sm sm:text-base truncate">{playlist.name}</h3>
+                    <p className="text-xs text-neutral-400 mt-0.5 sm:mt-1">
                       {playlist.tracks?.length || 0} tracks
                     </p>
                   </div>
@@ -119,7 +119,7 @@ export const LibraryPage: React.FC = () => {
                     e.preventDefault();
                     deletePlaylist(playlist.id);
                   }}
-                  className="absolute top-7 right-7 p-2 bg-neutral-900/80 border border-white/10 rounded-full text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+                  className="absolute top-5 right-5 sm:top-7 sm:right-7 p-2 bg-neutral-900/80 border border-white/10 rounded-full text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
                   title="Delete Playlist"
                 >
                   <Trash2 className="w-4 h-4" />

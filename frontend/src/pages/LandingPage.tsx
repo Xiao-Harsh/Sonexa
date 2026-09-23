@@ -72,66 +72,6 @@ const CARD_COUNT = DEFAULT_CARDS.length; // 7 cards
 const LOOP_MS = 46000; // 46s for ultra-smooth, slow cinematic floating motion
 const SPAN_RAD = (168 * Math.PI) / 180; // 168 degrees total orbital span
 
-// ── Responsive Card Transform (Mobile: smooth horizontal right-to-left flow; Desktop: orbital crown) ──
-function calculateResponsiveCardTransform(
-  phi: number,
-  p: number,
-  W: number,
-  H: number,
-  total: number,
-  cardBase: number
-) {
-  if (W < 768) {
-    // ── MOBILE: Smooth horizontal right-to-left conveyor with constant, non-overlapping spacing ──
-    const gap = Math.min(26, Math.max(18, Math.round(W * 0.05)));
-    const slotWidth = cardBase + gap;
-    const totalTrackWidth = total * slotWidth;
-
-    const screenCenter = W / 2;
-    // (1.0 - p) continuously moves cards from right to left across the screen!
-    const virtualPos = (1.0 - p) * totalTrackWidth;
-    let relativeX = ((virtualPos - screenCenter) % totalTrackWidth);
-    if (relativeX < -totalTrackWidth / 2) relativeX += totalTrackWidth;
-    if (relativeX > totalTrackWidth / 2) relativeX -= totalTrackWidth;
-
-    const x = screenCenter + relativeX;
-    // Safely positioned in the upper portion above the hero headline "MUSIC FOR EVERYONE."
-    const y = Math.min(265, Math.max(165, Math.round(H * 0.28)));
-
-    const edgeDist = Math.abs(relativeX);
-    const scale = Math.max(0.92, 1.05 - (edgeDist / (W * 0.6)) * 0.13);
-
-    let opacity = 1.0;
-    if (edgeDist > W * 0.46) {
-      opacity = Math.max(0, Math.min(1, (W * 0.72 - edgeDist) / (W * 0.26)));
-    }
-
-    const zIndex = Math.round((1.0 - Math.min(1.0, edgeDist / (W * 0.6))) * 20) + 1;
-    return { x, y, scale, rotation: 0, opacity, zIndex };
-  }
-
-  // ── DESKTOP: Wide half-circular orbital crown ──
-  const X_c = W / 2;
-  const Y_c = H * 1.07;
-  const R_x = W * 0.54;
-  const R_y = H * 0.79;
-
-  const x = X_c + R_x * Math.sin(phi);
-  const y = Y_c - R_y * Math.cos(phi) + Math.min(32, H * 0.035);
-
-  const phiDeg = (phi * 180) / Math.PI;
-  const absDeg = Math.abs(phiDeg);
-  const scale = Math.max(0.90, 1.04 - (absDeg / 70) * 0.14);
-
-  let opacity = 1.0;
-  if (absDeg > 54) {
-    opacity = Math.max(0, Math.min(1, (72 - absDeg) / 18));
-  }
-
-  const zIndex = Math.round((1.0 - Math.min(1.0, absDeg / 70)) * 20) + 1;
-  return { x, y, scale, rotation: 0, opacity, zIndex };
-}
-
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const playTrack = usePlayerStore((state) => state.playTrack);
@@ -142,11 +82,20 @@ export const LandingPage: React.FC = () => {
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false
   );
-  const [windowWidth, setWindowWidth] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth : 1200
-  );
+
+  // Viewport tracking for strict layout mode switches
+  const [viewport, setViewport] = useState(() => ({
+    w: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    h: typeof window !== 'undefined' ? window.innerHeight : 800,
+  }));
+
+  // Clean layout distinctions: Desktop vs Landscape Mobile vs Portrait Mobile
+  const isDesktop = viewport.w >= 1024 || (viewport.w >= 768 && viewport.h >= 600);
+  const isLandscapeMobile = !isDesktop && viewport.w > viewport.h;
+  const isPortraitMobile = !isDesktop && !isLandscapeMobile;
 
   // Direct DOM refs for 60fps animation without React re-renders
+  const cardFieldRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);
   const lastTimestampRef = useRef<number | null>(null);
   const progressRef = useRef<number>(0); // global normalized orbit progress in [0, 1)
@@ -157,14 +106,10 @@ export const LandingPage: React.FC = () => {
     w: typeof window !== 'undefined' ? window.innerWidth : 1200,
     h: typeof window !== 'undefined' ? window.innerHeight : 800,
   });
-  const tickRef = useRef<(timestamp: number) => void>(() => {});
+  const tickRef = useRef<(timestamp: number) => void>(() => { });
 
-  // Responsive card size tailored for wide spacing on desktop and proportional size on mobile
-  const getCardSize = useCallback((w: number) => {
-    if (w < 768) {
-      // Proportional, prominent card sizing across all mobile devices (~50% width)
-      return Math.min(240, Math.max(180, Math.round(w * 0.50)));
-    }
+  // Responsive card size for desktop
+  const getDesktopCardSize = useCallback((w: number) => {
     return Math.min(208, Math.max(155, Math.round(w * 0.138)));
   }, []);
 
@@ -205,77 +150,197 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
-  // Viewport resize & accessibility
+  // Viewport resize & accessibility listener
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const onPref = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', onPref);
 
     const onResize = () => {
-      dimRef.current = { w: window.innerWidth, h: window.innerHeight };
-      setWindowWidth(window.innerWidth);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      dimRef.current = { w, h };
+      setViewport({ w, h });
     };
+
     window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
 
     return () => {
       mq.removeEventListener('change', onPref);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
     };
   }, []);
 
-  // Main orbital movement loop — GUARANTEED ZERO OVERLAP
+  // Main 60fps tick loop: unified responsive composition
   const tick = useCallback(
     (timestamp: number) => {
       if (lastTimestampRef.current === null) lastTimestampRef.current = timestamp;
       const dt = Math.min(timestamp - lastTimestampRef.current, 50);
       lastTimestampRef.current = timestamp;
 
-      // Stop orbital movement if user points to / hovers over ANY card
+      // Stop motion if user is hovering over any card
       if (!isHoveredAnyRef.current) {
         progressRef.current += dt / LOOP_MS;
       }
 
       const { w, h } = dimRef.current;
-      const cardBase = getCardSize(w);
+      const isDesktopMode = w >= 1024 || (w >= 768 && h >= 600);
+      const isLandscapeMode = !isDesktopMode && w > h;
+      const isPortraitMode = !isDesktopMode && !isLandscapeMode;
       const total = cards.length;
 
-      // Update hover scales array length if needed
       if (hoverScaleRef.current.length !== total) {
         hoverScaleRef.current = new Array(total).fill(1.0);
       }
 
-      for (let i = 0; i < total; i++) {
-        const cardEl = cardRefs.current[i];
-        if (!cardEl) continue;
+      if (isPortraitMode) {
+        // ── PORTRAIT MOBILE: Matches Image 2 side-by-side card focus ──
+        const fieldEl = cardFieldRef.current;
+        const fieldW = fieldEl ? fieldEl.clientWidth : w;
+        const fieldH = fieldEl ? fieldEl.clientHeight : 220;
 
-        // Normalized progress of card i: strictly offset by i / total
-        // MATHEMATICALLY GUARANTEED: p is uniquely spaced, cards NEVER overlap!
-        const p = (progressRef.current + i / total) % 1.0;
+        // Card sizing matching Image 2: clamp(150px, 46vw, 220px)
+        const cardBase = Math.min(220, Math.max(150, Math.round(w * 0.46)));
+        const gap = Math.min(22, Math.max(14, Math.round(fieldW * 0.04)));
 
-        // Map p in [0, 1) to angle phi in [+SPAN_RAD/2, -SPAN_RAD/2]
-        // p = 0: entering right (+84°); p = 0.5: apex center (0°); p = 1: exiting left (-84°)
-        const phi = (SPAN_RAD / 2) - SPAN_RAD * p;
+        const slotWidth = cardBase + gap;
+        const totalTrackWidth = total * slotWidth;
+        const center = fieldW / 2;
 
-        // Smooth hover scale transition
-        const targetHoverScale = hoveredCard === i ? 1.07 : 1.0;
-        hoverScaleRef.current[i] += (targetHoverScale - hoverScaleRef.current[i]) * 0.15;
+        for (let i = 0; i < total; i++) {
+          const cardEl = cardRefs.current[i];
+          if (!cardEl) continue;
 
-        // Calculate position (ZERO tilt, perfectly upright)
-        const tf = calculateResponsiveCardTransform(phi, p, w, h, total, cardBase);
-        const finalScale = tf.scale * hoverScaleRef.current[i];
+          const p = (progressRef.current + i / total) % 1.0;
+          const targetHoverScale = hoveredCard === i ? 1.05 : 1.0;
+          hoverScaleRef.current[i] += (targetHoverScale - hoverScaleRef.current[i]) * 0.15;
 
-        const tx = tf.x - cardBase / 2;
-        const ty = tf.y - cardBase / 2;
+          // Continuous right-to-left flow across the card field
+          const virtualPos = (1.0 - p) * totalTrackWidth;
+          let relativeX = (virtualPos - center) % totalTrackWidth;
+          if (relativeX < -totalTrackWidth / 2) relativeX += totalTrackWidth;
+          if (relativeX > totalTrackWidth / 2) relativeX -= totalTrackWidth;
 
-        // Upright, square, zero-tilt transform
-        cardEl.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${finalScale.toFixed(4)})`;
-        cardEl.style.opacity = tf.opacity.toFixed(3);
-        cardEl.style.zIndex = String(hoveredCard === i ? 40 : tf.zIndex);
+          const x = center + relativeX;
+          const y = fieldH / 2; // Always vertically centered in .hero-card-field
+
+          const edgeDist = Math.abs(relativeX);
+          const centerFactor = Math.max(0, 1.0 - edgeDist / (fieldW * 0.58));
+          const scale = (0.92 + centerFactor * 0.11) * hoverScaleRef.current[i];
+
+          let opacity = 0.62 + centerFactor * 0.38;
+          if (edgeDist > fieldW * 0.45) {
+            opacity = Math.max(0, Math.min(opacity, ((fieldW * 0.72 - edgeDist) / (fieldW * 0.27)) * opacity));
+          }
+
+          const zIndex = Math.round(centerFactor * 20) + 1;
+
+          const tx = x - cardBase / 2;
+          const ty = y - cardBase / 2;
+
+          cardEl.style.width = `${cardBase}px`;
+          cardEl.style.height = `${cardBase}px`;
+          cardEl.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${scale.toFixed(4)})`;
+          cardEl.style.opacity = opacity.toFixed(3);
+          cardEl.style.zIndex = String(hoveredCard === i ? 40 : zIndex);
+        }
+      } else if (isLandscapeMode) {
+        // ── LANDSCAPE MOBILE: Preserved & Verified ──
+        const fieldEl = cardFieldRef.current;
+        const fieldW = fieldEl ? fieldEl.clientWidth : w;
+        const fieldH = fieldEl ? fieldEl.clientHeight : 110;
+
+        const cardBase = Math.min(115, Math.max(76, Math.round(h * 0.24)));
+        const gap = Math.max(14, Math.round(fieldW * 0.035));
+
+        const slotWidth = cardBase + gap;
+        const totalTrackWidth = total * slotWidth;
+        const center = fieldW / 2;
+
+        for (let i = 0; i < total; i++) {
+          const cardEl = cardRefs.current[i];
+          if (!cardEl) continue;
+
+          const p = (progressRef.current + i / total) % 1.0;
+          const targetHoverScale = hoveredCard === i ? 1.05 : 1.0;
+          hoverScaleRef.current[i] += (targetHoverScale - hoverScaleRef.current[i]) * 0.15;
+
+          const virtualPos = (1.0 - p) * totalTrackWidth;
+          let relativeX = (virtualPos - center) % totalTrackWidth;
+          if (relativeX < -totalTrackWidth / 2) relativeX += totalTrackWidth;
+          if (relativeX > totalTrackWidth / 2) relativeX -= totalTrackWidth;
+
+          const x = center + relativeX;
+          const y = fieldH / 2;
+
+          const edgeDist = Math.abs(relativeX);
+          const scale =
+            Math.max(0.92, 1.03 - (edgeDist / (fieldW * 0.6)) * 0.11) * hoverScaleRef.current[i];
+
+          let opacity = 1.0;
+          if (edgeDist > fieldW * 0.42) {
+            opacity = Math.max(0, Math.min(1, (fieldW * 0.72 - edgeDist) / (fieldW * 0.3)));
+          }
+
+          const zIndex = Math.round((1.0 - Math.min(1.0, edgeDist / (fieldW * 0.6))) * 20) + 1;
+
+          const tx = x - cardBase / 2;
+          const ty = y - cardBase / 2;
+
+          cardEl.style.width = `${cardBase}px`;
+          cardEl.style.height = `${cardBase}px`;
+          cardEl.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${scale.toFixed(4)})`;
+          cardEl.style.opacity = opacity.toFixed(3);
+          cardEl.style.zIndex = String(hoveredCard === i ? 40 : zIndex);
+        }
+      } else {
+        // ── DESKTOP: Half-circular orbital crown (100% identical to source design) ──
+        const cardBase = getDesktopCardSize(w);
+        const X_c = w / 2;
+        const Y_c = h * 1.07;
+        const R_x = w * 0.54;
+        const R_y = h * 0.79;
+
+        for (let i = 0; i < total; i++) {
+          const cardEl = cardRefs.current[i];
+          if (!cardEl) continue;
+
+          const p = (progressRef.current + i / total) % 1.0;
+          const phi = SPAN_RAD / 2 - SPAN_RAD * p;
+
+          const targetHoverScale = hoveredCard === i ? 1.07 : 1.0;
+          hoverScaleRef.current[i] += (targetHoverScale - hoverScaleRef.current[i]) * 0.15;
+
+          const x = X_c + R_x * Math.sin(phi);
+          const y = Y_c - R_y * Math.cos(phi) + Math.min(32, h * 0.035);
+
+          const phiDeg = (phi * 180) / Math.PI;
+          const absDeg = Math.abs(phiDeg);
+          const scale = Math.max(0.90, 1.04 - (absDeg / 70) * 0.14) * hoverScaleRef.current[i];
+
+          let opacity = 1.0;
+          if (absDeg > 54) {
+            opacity = Math.max(0, Math.min(1, (72 - absDeg) / 18));
+          }
+
+          const zIndex = Math.round((1.0 - Math.min(1.0, absDeg / 70)) * 20) + 1;
+
+          const tx = x - cardBase / 2;
+          const ty = y - cardBase / 2;
+
+          cardEl.style.width = `${cardBase}px`;
+          cardEl.style.height = `${cardBase}px`;
+          cardEl.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${scale.toFixed(4)})`;
+          cardEl.style.opacity = opacity.toFixed(3);
+          cardEl.style.zIndex = String(hoveredCard === i ? 40 : zIndex);
+        }
       }
 
       rafRef.current = requestAnimationFrame((ts) => tickRef.current(ts));
     },
-    [getCardSize, hoveredCard, cards.length]
+    [getDesktopCardSize, hoveredCard, cards.length]
   );
 
   useEffect(() => {
@@ -302,7 +367,7 @@ export const LandingPage: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [tick, reducedMotion]);
 
-  // Hover handlers: stops orbit on pointer entry over ANY card
+  // Hover handlers
   const handleCardMouseEnter = useCallback((index: number) => {
     isHoveredAnyRef.current = true;
     setHoveredCard(index);
@@ -323,7 +388,6 @@ export const LandingPage: React.FC = () => {
         return;
       }
 
-      // If fallback card clicked before trending loaded, search or fetch trending to start playback immediately
       try {
         const query = card.genre || card.title;
         const tracks = await musicApi.searchTracks(query, 5);
@@ -347,7 +411,7 @@ export const LandingPage: React.FC = () => {
   const handleRandomPlay = useCallback(async () => {
     try {
       let candidateTracks: Track[] = [];
-      const liveCardsTracks = cards.map(c => c.trackObj).filter(Boolean) as Track[];
+      const liveCardsTracks = cards.map((c) => c.trackObj).filter(Boolean) as Track[];
       if (liveCardsTracks.length > 0) {
         candidateTracks = liveCardsTracks;
       } else {
@@ -365,7 +429,418 @@ export const LandingPage: React.FC = () => {
     navigate('/app');
   }, [cards, navigate, playTrack]);
 
-  const cardBaseSize = getCardSize(windowWidth);
+  // Shared Card Inner Markup (Clean, responsive badges & titles)
+  const renderCardInner = (card: CardItem, i: number) => (
+    <div
+      className="relative w-full h-full rounded-[24px] sm:rounded-[28px] overflow-hidden border border-white/[0.12] transition-shadow duration-300 group"
+      style={{
+        boxShadow:
+          hoveredCard === i
+            ? '0 30px 80px -10px rgba(0,0,0,0.95), 0 0 0 1.5px rgba(255,255,255,0.3)'
+            : '0 22px 55px -12px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.08)',
+      }}
+    >
+      <img
+        src={card.image}
+        alt={card.title}
+        draggable={false}
+        onError={(e) => {
+          const img = e.currentTarget;
+          const fallback = DEFAULT_CARDS[i % DEFAULT_CARDS.length].image;
+          if (img.src !== fallback) {
+            img.src = fallback;
+          }
+        }}
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        style={{ filter: 'brightness(0.96) contrast(1.04)' }}
+      />
+
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.15) 100%)',
+        }}
+      />
+
+      {/* Top Right Pill Badge */}
+      <div className="absolute top-2.5 sm:top-3.5 right-2.5 sm:right-3.5 z-10">
+        <span className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 bg-black/60 backdrop-blur-xl border border-white/15 rounded-full text-[10px] sm:text-[11px] font-semibold text-white/90 shadow-md">
+          <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange-400" />
+          {card.genre || 'Trending'}
+        </span>
+      </div>
+
+      {/* Bottom Track Title Pill */}
+      <div className="absolute bottom-2.5 sm:bottom-3.5 left-2.5 sm:left-3.5 right-2.5 sm:right-3.5 z-10">
+        <div className="bg-black/65 backdrop-blur-xl border border-white/15 rounded-xl sm:rounded-2xl px-2.5 sm:px-3.5 py-1.5 sm:py-2.5">
+          <div className="flex items-center gap-1.5">
+            <Music2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-400 shrink-0" />
+            <p className="text-[11px] sm:text-[12px] font-bold text-white leading-tight truncate">
+              {card.title}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Hover Play CTA Overlay */}
+      <AnimatePresence>
+        {hoveredCard === i && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
+          >
+            <button
+              onClick={(e) => handlePlayCard(card, e)}
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_35px_rgba(255,255,255,0.4)] hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+              aria-label={`Play ${card.title}`}
+            >
+              <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-black text-black ml-0.5 sm:ml-1" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // 1. PORTRAIT MOBILE: EXACT REPLICA OF IMAGE 2 (PROPORTIONAL & RESPONSIVE)
+  // ═════════════════════════════════════════════════════════════════════════
+  if (isPortraitMobile) {
+    return (
+      <div
+        className="relative w-full h-[100dvh] min-h-[100dvh] bg-[#070707] text-white overflow-hidden select-none flex flex-col items-center justify-between px-4 sm:px-6 pt-3 sm:pt-4.5 pb-4 sm:pb-6"
+        style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+      >
+        {/* Cinematic ambient background glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(ellipse 80% 50% at 50% 28%, rgba(255,255,255,0.035) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Very subtle noise texture */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.025]"
+          aria-hidden="true"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E\")",
+            backgroundSize: '256px 256px',
+          }}
+        />
+
+        {/* 1. NAVBAR — Matching Image 2 */}
+        <header
+          className="shrink-0 z-40 mx-auto w-full"
+          style={{
+            maxWidth: 'min(94%, 480px)',
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 bg-[#141414]/90 backdrop-blur-2xl border border-white/[0.13] rounded-full px-5 sm:px-6 py-2.5 sm:py-3 shadow-[0_14px_45px_rgba(0,0,0,0.85)]">
+            <button
+              onClick={() => navigate('/')}
+              className="font-black text-[18px] sm:text-[20px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
+            >
+              SONEXA
+            </button>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                onClick={() => navigate('/login')}
+                className="text-[12.5px] font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer px-2 hidden xs:block"
+              >
+                Sign In
+              </button>
+              <button
+                id="landing-signup"
+                onClick={() => navigate('/register')}
+                className="px-5 sm:px-6 py-2 sm:py-2.5 bg-white hover:bg-neutral-100 text-black text-[12px] sm:text-[13px] font-bold rounded-full transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* 2. CARD FIELD — Controlled space below navbar matching Image 2 */}
+        <div
+          className="w-full flex items-center justify-center shrink-0"
+          style={{
+            marginTop: 'clamp(24px, 4.2vh, 44px)',
+          }}
+        >
+          <div
+            ref={cardFieldRef}
+            className="hero-card-field relative w-full flex items-center justify-center overflow-visible pointer-events-none"
+            style={{
+              height: 'clamp(195px, 26vh, 245px)',
+              minHeight: '190px',
+            }}
+          >
+            {cards.slice(0, CARD_COUNT).map((card, i) => (
+              <div
+                key={card.id}
+                ref={(el) => {
+                  cardRefs.current[i] = el;
+                }}
+                className="absolute pointer-events-auto cursor-pointer"
+                style={{
+                  width: 180,
+                  height: 180,
+                  top: 0,
+                  left: 0,
+                  willChange: 'transform, opacity',
+                  opacity: 0,
+                }}
+                onMouseEnter={() => handleCardMouseEnter(i)}
+                onMouseLeave={handleCardMouseLeave}
+                onClick={() => {
+                  if (card.trackObj) {
+                    playTrack(card.trackObj);
+                  }
+                  navigate('/app');
+                }}
+              >
+                {renderCardInner(card, i)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. HERO CONTENT: HEADING + DESCRIPTION + BUTTONS — Matching Image 2 */}
+        <div
+          className="w-full flex flex-col items-center text-center pointer-events-auto shrink-0 max-w-[520px]"
+          style={{
+            marginTop: 'clamp(26px, 4.8vh, 50px)',
+          }}
+        >
+          {/* 3-line Hero Headline matching Image 2 */}
+          <h1
+            className="font-black text-white tracking-tight uppercase select-none drop-shadow-2xl mx-auto"
+            style={{
+              fontSize: 'clamp(40px, 10.5vw, 64px)',
+              lineHeight: 0.93,
+              maxWidth: 'min(90%, 340px)',
+              letterSpacing: '-0.025em',
+              wordBreak: 'normal',
+              overflowWrap: 'break-word',
+            }}
+          >
+            Music
+            <br />
+            <span className="text-neutral-200">
+              For
+              <br />
+              Everyone.
+            </span>
+          </h1>
+
+          {/* Description matching Image 2 */}
+          <p
+            className="text-neutral-300 font-medium leading-relaxed mx-auto drop-shadow-md px-2"
+            style={{
+              fontSize: 'clamp(13px, 3.4vw, 15px)',
+              maxWidth: 'clamp(270px, 78vw, 360px)',
+              marginTop: 'clamp(10px, 1.6vh, 16px)',
+              lineHeight: 1.45,
+            }}
+          >
+            Explore new music, save what you love, and make every listen your own.
+          </p>
+
+          {/* Stacked CTA Buttons matching Image 2: 1st is bigger than 2nd */}
+          <div
+            className="w-full flex flex-col items-center gap-3 sm:gap-3.5 pointer-events-auto mx-auto"
+            style={{
+              marginTop: 'clamp(20px, 3.2vh, 30px)',
+            }}
+          >
+            {/* 1st Button: Bigger, wider, solid white */}
+            <button
+              id="landing-start-listening"
+              onClick={() => navigate('/app')}
+              className="w-full max-w-[250px] flex items-center justify-center gap-2 py-3.5 bg-white hover:bg-neutral-100 text-black text-[14px] sm:text-[14.5px] font-bold rounded-full transition-all shadow-[0_10px_28px_rgba(255,255,255,0.14)] hover:scale-105 active:scale-95 cursor-pointer min-h-[48px] touch-manipulation"
+            >
+              <Play className="w-4 h-4 fill-black text-black ml-0.5" />
+              Start Listening
+            </button>
+
+            {/* 2nd Button: Smaller, narrower, dark with border */}
+            <button
+              id="landing-explore-music"
+              onClick={() => navigate('/search')}
+              className="w-full max-w-[190px] flex items-center justify-center gap-2 py-2.5 sm:py-3 bg-[#0f0f0f]/90 hover:bg-white/[0.08] border border-white/20 hover:border-white/35 text-white text-[12.5px] sm:text-[13px] font-semibold rounded-full transition-all backdrop-blur-xl hover:scale-105 active:scale-95 cursor-pointer min-h-[42px] touch-manipulation"
+            >
+              Explore Music
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom space matching Image 2 */}
+        <div
+          className="shrink-0 w-full"
+          style={{
+            height: 'clamp(14px, 2.5vh, 30px)',
+          }}
+          aria-hidden="true"
+        />
+      </div>
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // 2. LANDSCAPE MOBILE: VERIFIED & PRESERVED (DO NOT BREAK)
+  // ═════════════════════════════════════════════════════════════════════════
+  if (isLandscapeMobile) {
+    return (
+      <div
+        className="relative w-full h-[100dvh] min-h-[100dvh] bg-[#070707] text-white overflow-hidden select-none flex flex-col justify-between items-center px-4 py-2 sm:py-3"
+        style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+      >
+        {/* Cinematic ambient background glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(ellipse 80% 50% at 50% 28%, rgba(255,255,255,0.035) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Very subtle noise texture */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.025]"
+          aria-hidden="true"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E\")",
+            backgroundSize: '256px 256px',
+          }}
+        />
+
+        {/* 1. NAVBAR — Landscape */}
+        <header className="w-full max-w-[800px] shrink-0 z-40">
+          <div className="flex items-center justify-between gap-3 bg-[#121212]/85 backdrop-blur-2xl border border-white/[0.09] rounded-full px-4 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
+            <button
+              onClick={() => navigate('/')}
+              className="font-black text-[16px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
+            >
+              SONEXA
+            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => navigate('/login')}
+                className="text-[12px] font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer px-2 hidden xs:block"
+              >
+                Sign In
+              </button>
+              <button
+                id="landing-signup"
+                onClick={() => navigate('/register')}
+                className="px-3.5 py-1.5 bg-white hover:bg-neutral-100 text-black text-[11px] font-bold rounded-full transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* 2. MUSIC CARD FIELD — Landscape */}
+        <div
+          ref={cardFieldRef}
+          className="hero-card-field relative w-full flex-1 flex items-center justify-center overflow-visible pointer-events-none my-auto"
+          style={{
+            minHeight: '80px',
+            maxHeight: '120px',
+          }}
+        >
+          {cards.slice(0, CARD_COUNT).map((card, i) => (
+            <div
+              key={card.id}
+              ref={(el) => {
+                cardRefs.current[i] = el;
+              }}
+              className="absolute pointer-events-auto cursor-pointer"
+              style={{
+                width: 110,
+                height: 110,
+                top: 0,
+                left: 0,
+                willChange: 'transform, opacity',
+                opacity: 0,
+              }}
+              onMouseEnter={() => handleCardMouseEnter(i)}
+              onMouseLeave={handleCardMouseLeave}
+              onClick={() => {
+                if (card.trackObj) {
+                  playTrack(card.trackObj);
+                }
+                navigate('/app');
+              }}
+            >
+              {renderCardInner(card, i)}
+            </div>
+          ))}
+        </div>
+
+        {/* 3. HERO CONTENT — Landscape */}
+        <div className="w-full shrink-0 flex flex-col items-center justify-center text-center max-w-[840px] z-30 pointer-events-auto">
+          <div className="w-full space-y-1.5">
+            <h1
+              className="font-black text-white tracking-tight leading-[0.93] uppercase select-none drop-shadow-2xl mx-auto"
+              style={{
+                fontSize: 'clamp(1.15rem, 5vh, 1.7rem)',
+                width: 'min(92%, 760px)',
+              }}
+            >
+              Music
+              <br />
+              <span className="text-neutral-300">For everyone.</span>
+            </h1>
+
+            <p
+              className="text-neutral-300 font-medium leading-relaxed max-w-[480px] mx-auto drop-shadow-md px-2"
+              style={{
+                fontSize: 'clamp(10px, 2.5vh, 12px)',
+                maxWidth: 'min(90%, 460px)',
+              }}
+            >
+              Explore new music, save what you love, and make every listen your own.
+            </p>
+
+            <div className="flex items-center justify-center gap-2.5 pointer-events-auto mx-auto pt-1">
+              <button
+                id="landing-start-listening"
+                onClick={() => navigate('/app')}
+                className="flex items-center justify-center gap-1.5 px-5 py-2 bg-white hover:bg-neutral-100 text-black text-[12px] font-bold rounded-full transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer min-h-[38px] touch-manipulation"
+              >
+                <Play className="w-3.5 h-3.5 fill-black text-black ml-0.5" />
+                Start Listening
+              </button>
+              <button
+                id="landing-explore-music"
+                onClick={() => navigate('/search')}
+                className="flex items-center justify-center gap-1.5 px-4.5 py-2 bg-black/50 hover:bg-white/[0.08] border border-white/20 hover:border-white/40 text-white text-[12px] font-semibold rounded-full transition-all backdrop-blur-xl hover:scale-105 active:scale-95 cursor-pointer min-h-[38px] touch-manipulation"
+              >
+                Explore Music
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // 3. DESKTOP: EXACT SOURCE ORBITAL CROWN LAYOUT (100% UNCHANGED)
+  // ═════════════════════════════════════════════════════════════════════════
+  const desktopCardBase = getDesktopCardSize(viewport.w);
 
   return (
     <div
@@ -393,23 +868,21 @@ export const LandingPage: React.FC = () => {
         }}
       />
 
-      {/* ── FLOATING PILL NAVBAR — Clean realistic wordmark (no dot) ──────── */}
+      {/* FLOATING PILL NAVBAR — Desktop */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="absolute top-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-[800px] px-4"
+        className="absolute top-3.5 sm:top-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-[800px] px-3 sm:px-4"
       >
-        <div className="flex items-center justify-between gap-4 bg-[#121212]/80 backdrop-blur-2xl border border-white/[0.09] rounded-full px-5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
-          {/* Realistic Clean Wordmark Logo without dot */}
+        <div className="flex items-center justify-between gap-2.5 sm:gap-4 bg-[#121212]/80 backdrop-blur-2xl border border-white/[0.09] rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
           <button
             onClick={() => navigate('/')}
-            className="font-black text-[18px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
+            className="font-black text-base sm:text-[18px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
           >
             SONEXA
           </button>
 
-          {/* Navigation links — desktop */}
           <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">
             <button
               onClick={() => navigate('/app')}
@@ -441,18 +914,17 @@ export const LandingPage: React.FC = () => {
             </button>
           </nav>
 
-          {/* Auth CTA buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => navigate('/login')}
-              className="text-[12px] font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer px-2.5 hidden sm:block"
+              className="text-[12px] font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer px-2 sm:px-2.5 hidden sm:block"
             >
               Sign In
             </button>
             <button
               id="landing-signup"
               onClick={() => navigate('/register')}
-              className="px-5 py-2 bg-white hover:bg-neutral-100 text-black text-[12px] font-bold rounded-full transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+              className="px-3.5 sm:px-5 py-1.5 sm:py-2 bg-white hover:bg-neutral-100 text-black text-[11px] sm:text-[12px] font-bold rounded-full transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
             >
               Sign Up
             </button>
@@ -460,157 +932,75 @@ export const LandingPage: React.FC = () => {
         </div>
       </motion.header>
 
-      {/* ── SMOOTH HALF-CIRCULAR ORBITAL LAYER — 100% Upright, Zero Overlap ──── */}
+      {/* SMOOTH HALF-CIRCULAR ORBITAL LAYER — Desktop Crown */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {cards.slice(0, CARD_COUNT).map((card, i) => {
-          return (
-            <div
-              key={card.id}
-              ref={(el) => {
-                cardRefs.current[i] = el;
-              }}
-              className="absolute pointer-events-auto cursor-pointer"
-              style={{
-                width: cardBaseSize,
-                height: cardBaseSize,
-                top: 0,
-                left: 0,
-                willChange: 'transform, opacity',
-                opacity: 0,
-              }}
-              onMouseEnter={() => handleCardMouseEnter(i)}
-              onMouseLeave={handleCardMouseLeave}
-              onClick={() => {
-                if (card.trackObj) {
-                  playTrack(card.trackObj);
-                }
-                navigate('/app');
-              }}
-            >
-              {/* Card Container with rich drop shadow & clean border */}
-              <div
-                className="relative w-full h-full rounded-[28px] overflow-hidden border border-white/[0.12] transition-shadow duration-300 group"
-                style={{
-                  boxShadow:
-                    hoveredCard === i
-                      ? '0 30px 80px -10px rgba(0,0,0,0.95), 0 0 0 1.5px rgba(255,255,255,0.3)'
-                      : '0 22px 55px -12px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.08)',
-                }}
-              >
-                {/* 100% Bright Full-Bleed Artwork with safe fallback on error */}
-                <img
-                  src={card.image}
-                  alt={card.title}
-                  draggable={false}
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    const fallback = DEFAULT_CARDS[i % DEFAULT_CARDS.length].image;
-                    if (img.src !== fallback) {
-                      img.src = fallback;
-                    }
-                  }}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  style={{ filter: 'brightness(0.96) contrast(1.04)' }}
-                />
-
-                {/* Subtle vignette gradient so tags & text are crystal clear */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.15) 100%)',
-                  }}
-                />
-
-                {/* Reference Style Badges: Top Right Pill Badge */}
-                <div className="absolute top-3.5 right-3.5 z-10">
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-black/60 backdrop-blur-xl border border-white/15 rounded-full text-[11px] font-semibold text-white/90 shadow-md">
-                    <Sparkles className="w-3 h-3 text-orange-400" />
-                    {card.genre || 'Trending'}
-                  </span>
-                </div>
-
-                {/* Bottom track info pill: strictly title and genre */}
-                <div className="absolute bottom-3.5 left-3.5 right-3.5 z-10">
-                  <div className="bg-black/65 backdrop-blur-xl border border-white/15 rounded-2xl px-3.5 py-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <Music2 className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <p className="text-[12px] font-bold text-white leading-tight truncate">
-                        {card.title}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hover Play CTA Overlay */}
-                <AnimatePresence>
-                  {hoveredCard === i && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.85 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.85 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
-                    >
-                      <button
-                        onClick={(e) => handlePlayCard(card, e)}
-                        className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_35px_rgba(255,255,255,0.4)] hover:scale-110 active:scale-95 transition-transform cursor-pointer"
-                        aria-label={`Play ${card.title}`}
-                      >
-                        <Play className="w-6 h-6 fill-black text-black ml-1" />
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          );
-        })}
+        {cards.slice(0, CARD_COUNT).map((card, i) => (
+          <div
+            key={card.id}
+            ref={(el) => {
+              cardRefs.current[i] = el;
+            }}
+            className="absolute pointer-events-auto cursor-pointer"
+            style={{
+              width: desktopCardBase,
+              height: desktopCardBase,
+              top: 0,
+              left: 0,
+              willChange: 'transform, opacity',
+              opacity: 0,
+            }}
+            onMouseEnter={() => handleCardMouseEnter(i)}
+            onMouseLeave={handleCardMouseLeave}
+            onClick={() => {
+              if (card.trackObj) {
+                playTrack(card.trackObj);
+              }
+              navigate('/app');
+            }}
+          >
+            {renderCardInner(card, i)}
+          </div>
+        ))}
       </div>
 
-      {/* ── HERO CONTENT — Rephrased headline, positioned cleanly lower down ── */}
+      {/* HERO CONTENT — Desktop */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute inset-x-0 bottom-[12vh] sm:bottom-[13vh] md:bottom-14 flex flex-col items-center justify-center text-center z-30 pointer-events-none px-6"
+        className="absolute inset-x-0 bottom-[8vh] sm:bottom-[12vh] md:bottom-14 flex flex-col items-center justify-center text-center z-30 pointer-events-none px-4 sm:px-6"
       >
-        <div className="max-w-[840px] space-y-4">
-          {/* Main Headline */}
+        <div className="max-w-[840px] space-y-3 sm:space-y-4">
           <h1
             className="font-black text-white tracking-tight leading-[0.92] uppercase select-none drop-shadow-2xl"
-            style={{ fontSize: 'clamp(2.9rem, 7.6vw, 6.4rem)' }}
+            style={{ fontSize: 'clamp(2.1rem, 6.8vw, 6.4rem)' }}
           >
             Music
             <br />
             <span className="text-neutral-300">For everyone.</span>
           </h1>
 
-          {/* Subtitle text */}
-          <p className="text-[15px] sm:text-[17px] text-neutral-300 font-medium leading-relaxed max-w-[540px] mx-auto pt-1 drop-shadow-md">
+          <p className="text-[13px] sm:text-[15px] md:text-[17px] text-neutral-300 font-medium leading-relaxed max-w-[540px] mx-auto pt-0.5 sm:pt-1 drop-shadow-md">
             Explore new music, save what you love, and make every listen your own.
           </p>
 
-          {/* Call to action buttons */}
-          <div className="flex items-center justify-center gap-3 pt-3 pointer-events-auto flex-wrap">
+          <div className="flex items-center justify-center gap-2.5 sm:gap-3 pt-2 sm:pt-3 pointer-events-auto flex-wrap">
             <button
               id="landing-start-listening"
               onClick={() => navigate('/app')}
-              className="flex items-center gap-2.5 px-8 py-3.5 bg-white hover:bg-neutral-100 text-black text-[14px] font-bold rounded-full transition-all shadow-[0_8px_24px_rgba(255,255,255,0.08)] hover:shadow-[0_8px_28px_rgba(255,255,255,0.14)] hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white hover:bg-neutral-100 text-black text-[13px] sm:text-[14px] font-bold rounded-full transition-all shadow-[0_8px_24px_rgba(255,255,255,0.08)] hover:shadow-[0_8px_28px_rgba(255,255,255,0.14)] hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <Play className="w-4 h-4 fill-black text-black ml-0.5" />
+              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-black text-black ml-0.5" />
               Start Listening
             </button>
             <button
               id="landing-explore-music"
               onClick={() => navigate('/search')}
-              className="flex items-center gap-2 px-7 py-3.5 bg-black/50 hover:bg-white/[0.08] border border-white/20 hover:border-white/40 text-white text-[14px] font-semibold rounded-full transition-all backdrop-blur-xl hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-5 sm:px-7 py-3 sm:py-3.5 bg-black/50 hover:bg-white/[0.08] border border-white/20 hover:border-white/40 text-white text-[13px] sm:text-[14px] font-semibold rounded-full transition-all backdrop-blur-xl hover:scale-105 active:scale-95 cursor-pointer"
             >
               Explore Music
             </button>
           </div>
-
-          {/* Attribution footer */}
         </div>
       </motion.div>
     </div>

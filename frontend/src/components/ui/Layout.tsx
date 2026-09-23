@@ -206,22 +206,22 @@ export const Layout: React.FC = () => {
         {/* TOP HEADER - Mobile Fixed Floating Pill & Desktop Glass Header */}
         <header className="shrink-0 z-40 transition-all md:relative fixed top-0 left-0 right-0">
           {/* MOBILE VIEW (< md): Floating Pill Navbar pinned at top */}
-          <div className="md:hidden px-4 pt-3 pb-2">
-            <div className="flex items-center justify-between gap-3 apple-glass-pill rounded-full px-5 py-2.5">
+          <div className="md:hidden px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2">
+            <div className="flex items-center justify-between gap-2.5 sm:gap-3 apple-glass-pill rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5">
               {/* Left Brand Wordmark */}
               <button
                 onClick={() => navigate('/app')}
-                className="font-black text-[18px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
+                className="font-black text-base sm:text-[18px] tracking-[-0.03em] text-white uppercase cursor-pointer shrink-0 hover:opacity-85 transition-opacity"
               >
                 SONEXA
               </button>
 
               {/* Right Side Actions: Search Icon (on left side of sign in) + Sign In / User */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Search Icon with authentic hover effect */}
                 <button
                   onClick={() => setIsSearchOpen(true)}
-                  className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
+                  className="p-1.5 sm:p-2 text-neutral-400 hover:text-white hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
                   title="Search (Ctrl+K)"
                   aria-label="Search"
                 >
@@ -242,7 +242,7 @@ export const Layout: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => navigate('/login')}
-                    className="px-4 py-1.5 bg-white hover:bg-neutral-200 text-black text-xs font-bold rounded-full transition-all cursor-pointer shadow-md active:scale-95"
+                    className="px-3 sm:px-4 py-1.5 bg-white hover:bg-neutral-200 text-black text-xs font-bold rounded-full transition-all cursor-pointer shadow-md active:scale-95"
                   >
                     Sign In
                   </button>
@@ -252,7 +252,7 @@ export const Layout: React.FC = () => {
           </div>
 
           {/* DESKTOP VIEW (>= md): Full-width glass header with search trigger */}
-          <div className="hidden md:flex h-16 border-b border-white/5 px-8 items-center justify-between bg-[#090909]/80 backdrop-blur-md">
+          <div className="hidden md:flex h-16 border-b border-white/5 px-4 lg:px-8 items-center justify-between bg-[#090909]/80 backdrop-blur-md">
             {/* Search bar trigger */}
             <div
               onClick={() => setIsSearchOpen(true)}
@@ -310,7 +310,7 @@ export const Layout: React.FC = () => {
         {/* MAIN BODY (Center Canvas + Right Sidebar) */}
         <div className="flex-1 flex overflow-hidden">
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 pb-36 md:pb-32 overscroll-contain">
+          <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 md:p-8 pt-16 sm:pt-20 md:pt-8 pb-44 sm:pb-36 md:pb-32 overscroll-contain">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-[#070707] text-white flex flex-col justify-center items-center p-6 relative overflow-hidden select-none"
+      className="min-h-screen bg-[#070707] text-white flex flex-col justify-center items-center p-4 sm:p-6 relative overflow-y-auto select-none"
       style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
     >
       {/* Subtle ambient music room lighting */}
@@ -57,14 +57,14 @@ export const LoginPage: React.FC = () => {
       {/* Back link */}
       <button
         onClick={() => navigate('/')}
-        className="absolute top-6 left-6 sm:top-8 sm:left-8 flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer z-20 py-2 px-3 rounded-full hover:bg-white/[0.05]"
+        className="self-start mb-4 sm:absolute sm:top-8 sm:left-8 flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer z-20 py-2 px-3 rounded-full hover:bg-white/[0.05]"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Sonexa
       </button>
 
       {/* Login Card Container */}
-      <div className="w-full max-w-[420px] bg-[#121212]/80 backdrop-blur-2xl border border-white/[0.09] rounded-3xl p-8 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] relative z-10">
+      <div className="w-full max-w-[420px] bg-[#121212]/80 backdrop-blur-2xl border border-white/[0.09] rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] relative z-10">
         {/* Sonexa Brand Wordmark Header — clean, authentic, no AI gradient badges */}
         <div className="flex flex-col items-center text-center mb-8">
           <Link

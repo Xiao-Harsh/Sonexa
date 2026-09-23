@@ -174,7 +174,7 @@ export const HomePage: React.FC = () => {
       className="space-y-10 text-left"
     >
       {/* FULLY DYNAMIC & FIXED-HEIGHT HERO BANNER */}
-      <div className="relative bg-[#121212] border border-white/5 rounded-3xl overflow-hidden h-[240px] sm:h-[340px] flex items-center p-6 sm:p-10 shadow-2xl">
+      <div className="relative bg-[#121212] border border-white/5 rounded-2xl sm:rounded-3xl overflow-hidden min-h-[220px] sm:min-h-[290px] md:h-[340px] flex items-center p-4 sm:p-8 md:p-10 shadow-2xl">
         {/* Background Image Layer with Fallback */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -193,29 +193,29 @@ export const HomePage: React.FC = () => {
                 e.currentTarget.src = FALLBACK_HERO;
               }}
             />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #090909 0%, #090909 20%, rgba(9,9,9,0.85) 40%, rgba(9,9,9,0.4) 65%, transparent 95%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #090909 0%, #090909 25%, rgba(9,9,9,0.88) 45%, rgba(9,9,9,0.4) 70%, transparent 95%)' }} />
           </motion.div>
         </AnimatePresence>
 
-        {/* Hero Content Area with Fixed Alignment */}
-        <div className="relative z-10 max-w-lg space-y-3 text-left">
+        {/* Hero Content Area with Responsive Spacing */}
+        <div className="relative z-10 max-w-lg space-y-2 sm:space-y-3 text-left pr-14 sm:pr-0">
           <div>
             <span className="inline-block text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-neutral-400 bg-white/5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-white/5">
               {currentSlide.eyebrow}
             </span>
           </div>
 
-          <div className="min-h-[50px] sm:min-h-[76px] flex flex-col justify-center">
-            <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight line-clamp-2">
+          <div className="min-h-[42px] sm:min-h-[64px] flex flex-col justify-center">
+            <h1 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight line-clamp-2">
               {currentSlide.title}
             </h1>
           </div>
 
-          <p className="text-neutral-400 text-xs md:text-sm font-medium truncate max-w-md">
+          <p className="text-neutral-400 text-xs sm:text-sm font-medium truncate max-w-md">
             by <strong className="text-white font-semibold">{currentSlide.artist}</strong>
           </p>
 
-          <div className="flex items-center gap-4 pt-1 sm:pt-2">
+          <div className="flex items-center gap-3 sm:gap-4 pt-1 sm:pt-2">
             <button
               onClick={() => {
                 if (currentSlide.trackObj) {
@@ -227,7 +227,7 @@ export const HomePage: React.FC = () => {
                   playTrack(tracks[0]);
                 }
               }}
-              className="px-5 py-2 sm:px-6 sm:py-2.5 bg-white hover:bg-neutral-200 active:scale-95 text-black font-bold text-xs rounded-full flex items-center gap-2 shadow-lg transition-all cursor-pointer shrink-0"
+              className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white hover:bg-neutral-200 active:scale-95 text-black font-bold text-xs rounded-full flex items-center gap-1.5 sm:gap-2 shadow-lg transition-all cursor-pointer shrink-0"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Play now
@@ -243,15 +243,15 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Hero Carousel Controls */}
-        <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-8 z-10 flex items-center gap-4">
+        <div className="absolute bottom-3 sm:bottom-6 right-3 sm:right-8 z-10 flex items-center gap-2 sm:gap-4">
           {/* Pagination Dots */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {heroSlides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentSlideIndex(idx)}
                 className={`h-1.5 sm:h-2 rounded-full transition-all cursor-pointer ${
-                  currentSlideIndex === idx ? 'w-4 sm:w-5 bg-white' : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
+                  currentSlideIndex === idx ? 'w-3.5 sm:w-5 bg-white' : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
                 }`}
               />
             ))}
@@ -278,17 +278,17 @@ export const HomePage: React.FC = () => {
       {/* INSTANT DESI / INDIAN / GLOBAL MIXES SECTION */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-tight text-white">Your Mixes</h2>
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-white">Your Mixes</h2>
           <span onClick={() => navigate('/search')} className="text-xs font-medium text-neutral-500 hover:text-white cursor-pointer transition-colors">
             View all
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {mixes.map((mix, idx) => (
             <div
               key={idx}
-              className="group relative bg-[#141414] border border-white/5 hover:border-white/15 rounded-2xl overflow-hidden aspect-[4/5] flex flex-col justify-end p-5 transition-all duration-300 shadow-xl cursor-pointer"
+              className="group relative bg-[#141414] border border-white/5 hover:border-white/15 rounded-xl sm:rounded-2xl overflow-hidden aspect-[4/5] flex flex-col justify-end p-3 sm:p-4 md:p-5 transition-all duration-300 shadow-xl cursor-pointer"
               onClick={() => handleMixClick(mix.query, mix.title)}
             >
               <img
@@ -298,15 +298,15 @@ export const HomePage: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent z-0" />
 
-              <div className="relative z-10 space-y-1 text-left">
-                <h3 className="font-bold text-base text-white tracking-tight leading-tight">{mix.title}</h3>
-                <p className="text-[11px] text-neutral-400 line-clamp-2 leading-relaxed font-medium">{mix.subtitle}</p>
+              <div className="relative z-10 space-y-0.5 sm:space-y-1 text-left">
+                <h3 className="font-bold text-xs sm:text-sm md:text-base text-white tracking-tight leading-tight line-clamp-1">{mix.title}</h3>
+                <p className="text-[10px] sm:text-[11px] text-neutral-400 line-clamp-2 leading-relaxed font-medium">{mix.subtitle}</p>
               </div>
 
               {/* Hover Play Button */}
-              <div className="absolute bottom-5 right-5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:translate-y-0 translate-y-2">
-                <div className="p-3 bg-white text-black rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all">
-                  <Play className="w-4 h-4 fill-current ml-0.5" />
+              <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:translate-y-0 translate-y-2">
+                <div className="p-2 sm:p-3 bg-white text-black rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                  <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current ml-0.5" />
                 </div>
               </div>
             </div>
@@ -317,7 +317,7 @@ export const HomePage: React.FC = () => {
       {/* MADE FOR YOU / TRENDING GRID */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-tight text-white">Trending Songs</h2>
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-white">Trending Songs</h2>
           <span onClick={() => navigate('/search')} className="text-xs font-medium text-neutral-500 hover:text-white cursor-pointer transition-colors">
             View all
           </span>
@@ -329,7 +329,7 @@ export const HomePage: React.FC = () => {
             <span className="text-xs font-medium tracking-wide">Loading recommendations...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {tracks.map((track) => (
               <TrackCard
                 key={track.id}

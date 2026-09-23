@@ -96,7 +96,7 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
       }`}
     >
       {/* Index / Play Button */}
-      <td className="py-3 px-4 text-center text-sm font-semibold text-neutral-500 relative w-12">
+      <td className="py-2.5 sm:py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-semibold text-neutral-500 relative w-10 sm:w-12">
         <span className={`${isCurrent ? 'text-indigo-400 font-bold' : ''} group-hover:opacity-0`}>
           {isCurrent ? (isPlaying ? '🔊' : '▶') : index + 1}
         </span>
@@ -114,20 +114,20 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
       </td>
 
       {/* Title & Artwork */}
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-neutral-900 border border-white/5 rounded overflow-hidden shrink-0 flex items-center justify-center">
+      <td className="py-2.5 sm:py-3 px-2 sm:px-4">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
             {artworkUrl ? (
               <img src={artworkUrl} alt={track.title} className="object-cover w-full h-full" />
             ) : (
               <Music className="w-4 h-4 text-neutral-600" />
             )}
           </div>
-          <div className="text-left max-w-[180px] sm:max-w-md overflow-hidden">
-            <p className={`font-semibold text-sm truncate transition-colors ${isCurrent ? 'text-indigo-400' : 'text-white'}`} title={track.title}>
+          <div className="text-left min-w-0 max-w-[140px] min-[380px]:max-w-[200px] sm:max-w-md overflow-hidden">
+            <p className={`font-semibold text-xs sm:text-sm truncate transition-colors ${isCurrent ? 'text-indigo-400' : 'text-white'}`} title={track.title}>
               {track.title}
             </p>
-            <p className="text-xs text-neutral-400 truncate mt-0.5 md:hidden">
+            <p className="text-[10px] sm:text-xs text-neutral-400 truncate mt-0.5 md:hidden font-medium">
               {track.user.name}
             </p>
           </div>
@@ -135,12 +135,12 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
       </td>
 
       {/* Artist */}
-      <td className="py-3 px-4 text-sm text-neutral-400 hidden md:table-cell">
+      <td className="py-2.5 sm:py-3 px-4 text-sm text-neutral-400 hidden md:table-cell">
         {track.user.name}
       </td>
 
       {/* Genre */}
-      <td className="py-3 px-4 text-sm text-neutral-400 hidden sm:table-cell">
+      <td className="py-2.5 sm:py-3 px-4 text-sm text-neutral-400 hidden sm:table-cell">
         {track.genre ? (
           <span className="uppercase tracking-wider text-[9px] font-bold px-2 py-0.5 bg-white/5 rounded border border-white/5 text-neutral-300">
             {track.genre}
@@ -151,7 +151,7 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
       </td>
 
       {/* Actions (Like, Playlist) */}
-      <td className="py-3 px-4 w-24 text-center">
+      <td className="py-2.5 sm:py-3 px-1 sm:px-4 w-18 sm:w-24 text-center">
         <div className="flex items-center justify-center gap-1">
           <button
             onClick={handleHeartClick}
@@ -381,17 +381,17 @@ export const SearchPage: React.FC = () => {
             <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
               Search Results for "{query}"
             </h2>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
               <table className="w-full text-left border-collapse select-none">
                 <thead>
                   <tr className="text-neutral-500 text-xs font-semibold uppercase tracking-wider border-b border-white/5 pb-3">
-                    <th className="py-3 px-4 w-12 text-center">#</th>
-                    <th className="py-3 px-4">Title</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Artist</th>
-                    <th className="py-3 px-4 hidden sm:table-cell">Genre</th>
-                    <th className="py-3 px-4 w-24 text-center">Actions</th>
-                    <th className="py-3 px-4 w-16 text-center">
-                      <Clock className="w-4 h-4 mx-auto" />
+                    <th className="py-2.5 sm:py-3 px-2 sm:px-4 w-10 sm:w-12 text-center">#</th>
+                    <th className="py-2.5 sm:py-3 px-2 sm:px-4">Title</th>
+                    <th className="py-2.5 sm:py-3 px-4 hidden md:table-cell">Artist</th>
+                    <th className="py-2.5 sm:py-3 px-4 hidden sm:table-cell">Genre</th>
+                    <th className="py-2.5 sm:py-3 px-1 sm:px-4 w-18 sm:w-24 text-center">Actions</th>
+                    <th className="py-2.5 sm:py-3 px-2 sm:px-4 w-14 sm:w-16 text-center">
+                      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mx-auto" />
                     </th>
                   </tr>
                 </thead>
@@ -424,7 +424,7 @@ export const SearchPage: React.FC = () => {
           {/* SECTION 1: TRENDING NOW */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold tracking-tight text-white">Trending Now</h2>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">Trending Now</h2>
               <span className="text-xs font-medium text-neutral-500 hover:text-white cursor-pointer transition-colors">
                 View all
               </span>
@@ -436,7 +436,7 @@ export const SearchPage: React.FC = () => {
                 <span className="text-xs font-medium">Loading trending tracks...</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
                 {trendingTracks.slice(0, 5).map((track) => (
                   <TrackCard
                     key={track.id}
@@ -454,17 +454,17 @@ export const SearchPage: React.FC = () => {
           {/* SECTION 2: MADE FOR YOU */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold tracking-tight text-white">Made for you</h2>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">Made for you</h2>
               <span className="text-xs font-medium text-neutral-500 hover:text-white cursor-pointer transition-colors">
                 View all
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 min-[540px]:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {dailyMixes.map((mix, idx) => (
                 <div
                   key={idx}
-                  className="group relative bg-[#141414] border border-white/5 hover:border-white/15 rounded-2xl overflow-hidden h-44 flex flex-col justify-end p-6 transition-all duration-300 shadow-xl cursor-pointer"
+                  className="group relative bg-[#141414] border border-white/5 hover:border-white/15 rounded-xl sm:rounded-2xl overflow-hidden h-36 sm:h-40 md:h-44 flex flex-col justify-end p-4 sm:p-5 md:p-6 transition-all duration-300 shadow-xl cursor-pointer"
                   onClick={() => handleMixClick(mix.query, mix.title)}
                 >
                   <img
@@ -474,15 +474,15 @@ export const SearchPage: React.FC = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0" />
 
-                  <div className="relative z-10 space-y-1 text-left max-w-[80%]">
-                    <h3 className="font-extrabold text-lg text-white tracking-tight leading-tight">{mix.title}</h3>
+                  <div className="relative z-10 space-y-0.5 sm:space-y-1 text-left max-w-[80%]">
+                    <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight leading-tight">{mix.title}</h3>
                     <p className="text-xs text-neutral-300 truncate font-medium">{mix.subtitle}</p>
                   </div>
 
                   {/* Circular Play Button */}
-                  <div className="absolute bottom-5 right-5 z-20 transition-transform duration-300 group-hover:scale-110">
-                    <div className="p-3.5 bg-white text-black rounded-full shadow-2xl flex items-center justify-center">
-                      <Play className="w-4 h-4 fill-current ml-0.5" />
+                  <div className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 z-20 transition-transform duration-300 group-hover:scale-110">
+                    <div className="p-3 sm:p-3.5 bg-white text-black rounded-full shadow-2xl flex items-center justify-center">
+                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current ml-0.5" />
                     </div>
                   </div>
                 </div>

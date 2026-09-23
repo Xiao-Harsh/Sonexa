@@ -143,14 +143,14 @@ export const PlayerBar: React.FC = () => {
         initial={{ y: 96, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-        className="fixed bottom-20 md:bottom-4 left-4 right-4 h-20 apple-glass-pill rounded-2xl flex items-center justify-between px-6 z-50 select-none"
+        className="fixed bottom-20 md:bottom-4 left-2 right-2 sm:left-4 sm:right-4 h-20 apple-glass-pill rounded-2xl flex items-center justify-between px-3 sm:px-5 md:px-6 z-50 select-none"
       >
         {/* LEFT: Artwork + Title + Like */}
         <div
           onClick={() => setIsExpanded(true)}
-          className="flex items-center gap-4 w-full md:w-1/4 md:min-w-[220px] cursor-pointer group overflow-hidden"
+          className="flex items-center gap-2.5 sm:gap-4 flex-1 md:flex-initial md:w-1/4 md:min-w-[220px] min-w-0 cursor-pointer group overflow-hidden pr-2"
         >
-          <div className="w-12 h-12 bg-neutral-900 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
             {artworkUrl ? (
               <img
                 src={artworkUrl}
@@ -165,11 +165,11 @@ export const PlayerBar: React.FC = () => {
             )}
           </div>
 
-          <div className="text-left overflow-hidden flex-1 md:flex-none">
+          <div className="text-left overflow-hidden min-w-0 flex-1">
             <h4 className="font-bold text-xs text-white truncate w-full group-hover:text-white" title={currentTrack.title}>
               {currentTrack.title}
             </h4>
-            <p className="text-[11px] text-neutral-400 truncate w-full mt-0.5 font-medium">
+            <p className="text-[10px] sm:text-[11px] text-neutral-400 truncate w-full mt-0.5 font-medium">
               {currentTrack.user?.name || 'Artist'}
             </p>
           </div>
@@ -264,14 +264,14 @@ export const PlayerBar: React.FC = () => {
         </div>
 
         {/* RIGHT: Volume & Action Icons (simplified on mobile) */}
-        <div className="flex items-center gap-3.5 sm:gap-4 md:w-1/4 justify-end min-w-0 md:min-w-[180px] shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4 md:w-1/4 justify-end min-w-0 md:min-w-[180px] shrink-0">
           {/* Mobile Heart Button */}
           <button
             onClick={handleHeartClick}
-            className={`md:hidden p-1.5 transition-colors cursor-pointer shrink-0 ${isLiked ? 'text-rose-500' : 'text-neutral-500'}`}
+            className={`md:hidden p-1 sm:p-1.5 transition-colors cursor-pointer shrink-0 ${isLiked ? 'text-rose-500' : 'text-neutral-500'}`}
             title={isLiked ? 'Unlike' : 'Like'}
           >
-            <Heart className={`w-4.5 h-4.5 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${isLiked ? 'fill-current' : ''}`} />
           </button>
 
           {/* Mobile Play/Pause Button */}
@@ -280,7 +280,7 @@ export const PlayerBar: React.FC = () => {
               e.stopPropagation();
               togglePlay();
             }}
-            className="md:hidden p-2.5 bg-white text-black rounded-full shadow-lg cursor-pointer flex items-center justify-center shrink-0"
+            className="md:hidden p-2 sm:p-2.5 bg-white text-black rounded-full shadow-lg cursor-pointer flex items-center justify-center shrink-0 active:scale-95"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
@@ -296,10 +296,10 @@ export const PlayerBar: React.FC = () => {
               e.stopPropagation();
               nextTrack();
             }}
-            className="md:hidden p-1.5 text-neutral-450 hover:text-white transition-colors cursor-pointer shrink-0"
+            className="md:hidden p-1 sm:p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
             title="Next"
           >
-            <SkipForward className="w-4.5 h-4.5 fill-current" />
+            <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" />
           </button>
 
           {/* Desktop controls */}
@@ -404,7 +404,7 @@ export const PlayerBar: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-28 right-6 w-80 max-h-[420px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 flex flex-col text-left backdrop-blur-xl"
+            className="fixed bottom-24 sm:bottom-28 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-80 max-w-sm max-h-[420px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 flex flex-col text-left backdrop-blur-xl"
           >
             <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-2">
               <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2">
@@ -462,7 +462,7 @@ export const PlayerBar: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-            className="fixed inset-0 z-[100] bg-[#090909] flex flex-col justify-between p-5 sm:p-8 overflow-hidden"
+            className="fixed inset-0 z-[100] bg-[#090909] flex flex-col justify-between p-4 sm:p-8 overflow-y-auto overflow-x-hidden"
           >
             {/* Background Blur Artwork */}
             {artworkUrl && (
@@ -495,8 +495,8 @@ export const PlayerBar: React.FC = () => {
             </div>
 
             {/* Main Center Content: Large Art + Info */}
-            <div className="relative z-10 max-w-md mx-auto w-full space-y-4 sm:space-y-8 text-center my-auto">
-              <div className="w-52 h-52 min-[370px]:w-64 min-[370px]:h-64 sm:w-80 sm:h-80 mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900 flex items-center justify-center">
+            <div className="relative z-10 max-w-md mx-auto w-full space-y-3 sm:space-y-6 text-center my-auto py-2">
+              <div className="w-44 h-44 min-[360px]:w-52 min-[360px]:h-52 min-[410px]:w-64 min-[410px]:h-64 sm:w-80 sm:h-80 max-h-[38vh] aspect-square mx-auto rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900 flex items-center justify-center">
                 {artworkUrl ? (
                   <img
                     src={artworkUrl}
@@ -512,7 +512,7 @@ export const PlayerBar: React.FC = () => {
               </div>
 
               <div className="space-y-1 sm:space-y-2 text-left px-2">
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight truncate">
+                <h2 className="text-lg sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight truncate">
                   {currentTrack.title}
                 </h2>
                 <p className="text-neutral-400 text-xs sm:text-sm font-medium">
@@ -539,7 +539,7 @@ export const PlayerBar: React.FC = () => {
               </div>
 
               {/* Expanded Controls: Centered 5 buttons (Shuffle/Repeat, Prev, Play, Next, Volume) */}
-              <div className="flex items-center justify-center gap-5 sm:gap-8 pt-2 sm:pt-4">
+              <div className="flex items-center justify-center gap-3 min-[360px]:gap-5 sm:gap-8 pt-1 sm:pt-4">
                 {/* 1. Shuffle & Repeat Mode Button */}
                 <button
                   onClick={handleCyclePlaybackMode}
