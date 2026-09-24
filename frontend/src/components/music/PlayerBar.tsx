@@ -49,6 +49,7 @@ export const PlayerBar: React.FC = () => {
     playTrack,
     sleepTimerRemaining,
     setSleepTimer,
+    stopAndClose,
   } = usePlayerStore();
 
   const { favorites, likeTrack, unlikeTrack } = useLibraryStore();
@@ -81,15 +82,42 @@ export const PlayerBar: React.FC = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const touchStartY = React.useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current !== null) {
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+      if (deltaY > 40) {
+        handleClosePlayer();
+      }
+      touchStartY.current = null;
+    }
+  };
+
+  const handleClosePlayer = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setIsExpanded(false);
+    setShowQueue(false);
+    setShowTimerMenu(false);
+    setShowExpandedVolume(false);
+    stopAndClose();
+    useToastStore.getState().showToast('Playback stopped', 'info');
+  };
+
   const currentTrack = queue[currentTrackIndex];
 
-  if (!currentTrack) return null;
-
-  const artworkUrl =
-    currentTrack.artwork?.['480x480'] ||
-    currentTrack.artwork?.['150x150'] ||
-    currentTrack.user?.artwork?.['150x150'];
-  const isLiked = favorites.some((f) => f.id === currentTrack.id);
+  const artworkUrl = currentTrack
+    ? currentTrack.artwork?.['480x480'] ||
+      currentTrack.artwork?.['150x150'] ||
+      currentTrack.user?.artwork?.['150x150']
+    : undefined;
+  const isLiked = currentTrack ? favorites.some((f) => f.id === currentTrack.id) : false;
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     seekTo(Number(e.target.value));
@@ -111,6 +139,7 @@ export const PlayerBar: React.FC = () => {
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!currentTrack) return;
     const { isAuthenticated } = useAuthStore.getState();
     if (!isAuthenticated) {
       useToastStore.getState().showToast('Please sign in to add songs to your favorites', 'info');
@@ -139,29 +168,46 @@ export const PlayerBar: React.FC = () => {
   return (
     <>
       {/* FLOATING PLAYER BAR */}
-      <motion.div
-        initial={{ y: 96, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-        className="fixed bottom-20 md:bottom-4 left-2 right-2 sm:left-4 sm:right-4 h-20 apple-glass-pill rounded-2xl flex items-center justify-between px-3 sm:px-5 md:px-6 z-50 select-none"
-      >
+      <AnimatePresence>
+        {currentTrack && (
+          <motion.div
+            key="floating-player-bar"
+            initial={{ y: 96, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0, transition: { duration: 0.22, ease: 'easeIn' } }}
+            transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+            className="fixed bottom-20 md:bottom-4 left-2 right-2 sm:left-4 sm:right-4 h-20 apple-glass-pill rounded-2xl flex items-center justify-between px-3 sm:px-5 md:px-6 z-50 select-none cursor-grab active:cursor-grabbing md:cursor-default"
+            drag="y"
+            dragDirectionLock
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.8 }}
+            dragSnapToOrigin
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 40 || info.velocity.y > 200) {
+                handleClosePlayer();
+              }
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Mobile Drag Down Visual Indicator Pill */}
+            <div className="md:hidden absolute top-1.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-white/25 rounded-full pointer-events-none" />
         {/* LEFT: Artwork + Title + Like */}
         <div
           onClick={() => setIsExpanded(true)}
           className="flex items-center gap-2.5 sm:gap-4 flex-1 md:flex-initial md:w-1/4 md:min-w-[220px] min-w-0 cursor-pointer group overflow-hidden pr-2"
         >
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
-            {artworkUrl ? (
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform relative">
+            <Music className="w-5 h-5 text-neutral-600 absolute inset-0 m-auto" />
+            {artworkUrl && (
               <img
                 src={artworkUrl}
                 alt={currentTrack.title}
-                className="object-cover w-full h-full"
+                className="object-cover w-full h-full relative z-10"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
               />
-            ) : (
-              <Music className="w-5 h-5 text-neutral-600" />
             )}
           </div>
 
@@ -302,6 +348,16 @@ export const PlayerBar: React.FC = () => {
             <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" />
           </button>
 
+          {/* Mobile Close Button */}
+          <button
+            onClick={handleClosePlayer}
+            className="md:hidden p-1 sm:p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer shrink-0"
+            title="Stop & Close Player"
+            aria-label="Stop & Close Player"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
           {/* Desktop controls */}
           <div className="hidden md:flex items-center gap-3 w-full justify-end">
             <button
@@ -392,9 +448,21 @@ export const PlayerBar: React.FC = () => {
             >
               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </button>
+
+            {/* Desktop Close Button */}
+            <button
+              onClick={handleClosePlayer}
+              className="text-neutral-400 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-all cursor-pointer ml-1"
+              title="Stop & Close Player"
+              aria-label="Stop & Close Player"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </motion.div>
+      )}
+    </AnimatePresence>
 
       {/* QUEUE DRAWER OVERLAY */}
       <AnimatePresence>
@@ -404,7 +472,7 @@ export const PlayerBar: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 sm:bottom-28 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-80 max-w-sm max-h-[420px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 flex flex-col text-left backdrop-blur-xl"
+            className="fixed bottom-24 sm:bottom-28 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-80 max-w-sm max-h-[min(420px,calc(100vh-120px))] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 flex flex-col text-left backdrop-blur-xl"
           >
             <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-2">
               <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2">
@@ -434,11 +502,17 @@ export const PlayerBar: React.FC = () => {
                       <span className="w-4 text-center text-[10px] text-neutral-500 font-mono">
                         {isCurrent ? '▶' : idx + 1}
                       </span>
-                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-neutral-800 shrink-0 border border-white/5">
-                        {track.artwork?.['150x150'] ? (
-                          <img src={track.artwork['150x150']} alt={track.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <Music className="w-3.5 h-3.5 text-neutral-500" />
+                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-neutral-800 shrink-0 border border-white/5 relative flex items-center justify-center">
+                        <Music className="w-3.5 h-3.5 text-neutral-500 absolute inset-0 m-auto" />
+                        {track.artwork?.['150x150'] && (
+                          <img
+                            src={track.artwork['150x150']}
+                            alt={track.title}
+                            className="w-full h-full object-cover relative z-10"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         )}
                       </div>
                       <div className="overflow-hidden">
@@ -496,18 +570,17 @@ export const PlayerBar: React.FC = () => {
 
             {/* Main Center Content: Large Art + Info */}
             <div className="relative z-10 max-w-md mx-auto w-full space-y-3 sm:space-y-6 text-center my-auto py-2">
-              <div className="w-44 h-44 min-[360px]:w-52 min-[360px]:h-52 min-[410px]:w-64 min-[410px]:h-64 sm:w-80 sm:h-80 max-h-[38vh] aspect-square mx-auto rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900 flex items-center justify-center">
-                {artworkUrl ? (
+              <div className="w-44 h-44 min-[360px]:w-52 min-[360px]:h-52 min-[410px]:w-64 min-[410px]:h-64 sm:w-80 sm:h-80 max-h-[38vh] max-w-[38vh] aspect-square mx-auto rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900 flex items-center justify-center relative">
+                <Music className="w-12 h-12 sm:w-16 sm:h-16 text-neutral-600 absolute inset-0 m-auto" />
+                {artworkUrl && (
                   <img
                     src={artworkUrl}
                     alt={currentTrack.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover relative z-10"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                ) : (
-                  <Music className="w-12 h-12 sm:w-16 sm:h-16 text-neutral-600" />
                 )}
               </div>
 

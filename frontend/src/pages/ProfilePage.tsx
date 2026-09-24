@@ -3,11 +3,12 @@ import { useAuthStore } from '../store/authStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { usePlayerStore } from '../store/playerStore';
 import { formatDuration } from '../utils/formatDuration';
-import { LogOut, Mail, FolderHeart, ListMusic, History, User, Play } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { LogOut, Mail, FolderHeart, ListMusic, History, User, Play, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AvatarRenderer, avatarsMap } from '../utils/avatars';
 
 export const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout, updateAvatar } = useAuthStore();
   const {
     playlists,
@@ -27,8 +28,35 @@ export const ProfilePage: React.FC = () => {
 
   const currentAvatar = user?.avatar || 'mascot1';
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/app');
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8 text-left">
+      {/* Directory Back Navigation & Breadcrumb */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleBack}
+          className="p-2 sm:p-2.5 bg-[#141414] hover:bg-neutral-800 border border-white/5 hover:border-white/10 rounded-xl text-neutral-400 hover:text-white transition-all cursor-pointer shrink-0 active:scale-95 shadow-sm"
+          title="Go Back"
+          aria-label="Go Back"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400">
+          <button onClick={() => navigate('/app')} className="hover:text-white transition-colors cursor-pointer">
+            Home
+          </button>
+          <span className="text-neutral-600">/</span>
+          <span className="text-white">Account Profile</span>
+        </div>
+      </div>
+
       <div className="relative bg-[#121212] border border-white/5 rounded-2xl p-5 sm:p-8 overflow-hidden shadow-lg">
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden flex items-center justify-center shadow-xl shrink-0 select-none">
@@ -154,19 +182,25 @@ export const ProfilePage: React.FC = () => {
                   className="flex items-center justify-between p-3 sm:p-3.5 bg-[#141414] hover:bg-neutral-800 border border-white/5 hover:border-white/10 rounded-xl transition-all group"
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                      {track.artwork?.["150x150"] ? (
-                        <img src={track.artwork["150x150"]} alt={track.title} className="object-cover w-full h-full" />
-                      ) : (
-                        <User className="w-4 h-4 text-neutral-600" />
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden flex items-center justify-center shrink-0 relative">
+                      <User className="w-4 h-4 text-neutral-600 absolute inset-0 m-auto" />
+                      {track.artwork?.["150x150"] && (
+                        <img
+                          src={track.artwork["150x150"]}
+                          alt={track.title}
+                          className="object-cover w-full h-full relative z-10"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
                       )}
                     </div>
-                    <div className="text-left overflow-hidden min-w-0">
-                      <p className="text-xs sm:text-sm font-semibold text-white truncate max-w-[120px] min-[360px]:max-w-[180px] sm:max-w-md">
-                        {track.title}
+                    <div className="text-left overflow-hidden min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-semibold text-white truncate" title={track.title || 'Untitled Track'}>
+                        {track.title || 'Untitled Track'}
                       </p>
                       <p className="text-[10px] sm:text-xs text-neutral-400 truncate mt-0.5 font-medium">
-                        {track.user.name}
+                        {track.user?.name || 'Artist'}
                       </p>
                     </div>
                   </div>

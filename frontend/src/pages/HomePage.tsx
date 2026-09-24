@@ -96,25 +96,25 @@ export const HomePage: React.FC = () => {
           title: 'Based on Recent',
           subtitle: `Songs by ${artist1} & similar artists`,
           query: artist1,
-          image: history[0]?.artwork?.['480x480'] || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+          image: history[0]?.artwork?.['480x480'] || 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80',
         },
         {
           title: 'Top Weekly Mix',
           subtitle: `Featuring ${artist2} & tailored tracks`,
           query: artist2,
-          image: history[1]?.artwork?.['480x480'] || 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80',
+          image: history[1]?.artwork?.['480x480'] || 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=800&q=80',
         },
         {
           title: 'Global Pop & Hits',
           subtitle: 'The Weeknd, Drake, Taylor Swift, Post Malone',
           query: 'Pop',
-          image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=800&q=80',
+          image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
         },
         {
           title: 'Bollywood & Desi',
           subtitle: 'Arijit Singh, Pritam, Diljit Dosanjh, Divine',
           query: 'Bollywood Hindi',
-          image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80',
+          image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=800&q=80',
         },
       ];
     }
@@ -125,25 +125,25 @@ export const HomePage: React.FC = () => {
         title: 'Global Hits',
         subtitle: 'The Weeknd, Drake, Post Malone & top global charts',
         query: 'Pop',
-        image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+        image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80',
       },
       {
         title: 'Bollywood Hits',
         subtitle: 'Arijit Singh, Pritam, Shreya Ghoshal, A.R. Rahman',
         query: 'Bollywood Hindi',
-        image: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80',
+        image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=800&q=80',
       },
       {
         title: 'Hip-Hop & Rap',
         subtitle: 'Travis Scott, 21 Savage, Divine, Badshah',
         query: 'Hip Hop',
-        image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=800&q=80',
+        image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
       },
       {
         title: 'Chill Lo-Fi & Indie',
         subtitle: 'Anuv Jain, Prateek Kuhad, Joji, Clairo',
         query: 'Chill Lofi',
-        image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80',
+        image: 'https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?auto=format&fit=crop&w=800&q=80',
       },
     ];
   }, [history]);
@@ -284,7 +284,7 @@ export const HomePage: React.FC = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {mixes.map((mix, idx) => (
             <div
               key={idx}
@@ -295,6 +295,9 @@ export const HomePage: React.FC = () => {
                 src={mix.image}
                 alt={mix.title}
                 className="absolute inset-0 w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent z-0" />
 
@@ -328,8 +331,8 @@ export const HomePage: React.FC = () => {
             <Loader2 className="w-8 h-8 text-white animate-spin" />
             <span className="text-xs font-medium tracking-wide">Loading recommendations...</span>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+        ) : tracks.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5">
             {tracks.map((track) => (
               <TrackCard
                 key={track.id}
@@ -340,6 +343,10 @@ export const HomePage: React.FC = () => {
                 }}
               />
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-[#141414] border border-white/5 rounded-2xl p-6 text-neutral-400 text-xs font-medium">
+            No trending tracks available at the moment. Explore music using the search bar.
           </div>
         )}
       </div>

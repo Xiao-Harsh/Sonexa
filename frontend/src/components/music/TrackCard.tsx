@@ -16,22 +16,21 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, onPlay }) => {
       className="group relative bg-neutral-900/40 border border-neutral-800/80 hover:border-neutral-700/60 rounded-xl p-2.5 sm:p-3.5 md:p-4 transition-all duration-300 shadow-lg hover:shadow-xl flex flex-col justify-between h-full cursor-pointer"
     >
       <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-neutral-950 flex items-center justify-center mb-2 sm:mb-3">
-        {artworkUrl ? (
+        <Music className="w-8 h-8 sm:w-12 sm:h-12 text-neutral-800 absolute inset-0 m-auto" />
+        {artworkUrl && (
           <img
             src={artworkUrl}
-            alt={track.title}
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+            alt={track.title || 'Track'}
+            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300 relative z-10"
             loading="lazy"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
           />
-        ) : (
-          <Music className="w-8 h-8 sm:w-12 sm:h-12 text-neutral-800" />
         )}
 
         {/* Hover / Active Play Button */}
-        <div className="absolute inset-0 bg-neutral-950/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+        <div className="absolute inset-0 z-20 bg-neutral-950/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -46,8 +45,8 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, onPlay }) => {
 
       {/* Name */}
       <div className="mb-1.5 sm:mb-2 min-w-0">
-        <h3 className="font-semibold text-xs sm:text-sm text-neutral-100 truncate w-full text-left" title={track.title}>
-          {track.title}
+        <h3 className="font-semibold text-xs sm:text-sm text-neutral-100 truncate w-full text-left" title={track.title || 'Untitled Track'}>
+          {track.title || 'Untitled Track'}
         </h3>
       </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, ArrowLeft, Music, Disc3, Sparkles } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, ArrowLeft, Disc3, Sparkles } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -55,6 +55,14 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/app');
+    }
+  };
+
   return (
     <div
       className="min-h-[100dvh] w-full bg-[#070707] text-white flex flex-col items-center justify-center p-3 sm:p-6 relative select-none overflow-y-auto"
@@ -84,11 +92,13 @@ export const LoginPage: React.FC = () => {
       {/* Floating Back button */}
       <div className={`w-full ${isWideScreen ? 'max-w-[880px]' : isShortLandscape ? 'max-w-[700px]' : 'max-w-[420px]'} flex justify-start mb-2.5 z-20`}>
         <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer py-1.5 px-3 rounded-full hover:bg-white/[0.05]"
+          onClick={handleBack}
+          className="flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer py-1.5 px-3 rounded-full hover:bg-white/[0.05] active:scale-95"
+          title="Go Back"
+          aria-label="Go Back"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Sonexa
+          Back
         </button>
       </div>
 

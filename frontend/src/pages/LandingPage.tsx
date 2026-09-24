@@ -90,7 +90,7 @@ export const LandingPage: React.FC = () => {
   }));
 
   // Clean layout distinctions: Desktop vs Landscape Mobile vs Portrait Mobile
-  const isDesktop = viewport.w >= 1024 || (viewport.w >= 768 && viewport.h >= 600);
+  const isDesktop = (viewport.w >= 1024 && viewport.h >= 520) || (viewport.w >= 768 && viewport.h >= 600);
   const isLandscapeMobile = !isDesktop && viewport.w > viewport.h;
   const isPortraitMobile = !isDesktop && !isLandscapeMobile;
 
@@ -108,9 +108,14 @@ export const LandingPage: React.FC = () => {
   });
   const tickRef = useRef<(timestamp: number) => void>(() => { });
 
-  // Responsive card size for desktop
-  const getDesktopCardSize = useCallback((w: number) => {
-    return Math.min(208, Math.max(155, Math.round(w * 0.138)));
+  // Responsive card size for desktop taking both width and height into account
+  const getDesktopCardSize = useCallback((w: number, h: number) => {
+    let size = Math.min(208, Math.max(140, Math.round(w * 0.132)));
+    if (h < 780) {
+      const hFactor = Math.min(1, Math.max(0, (780 - h) / 280));
+      size = Math.round(size - hFactor * 36);
+    }
+    return Math.max(118, size);
   }, []);
 
   // Fetch real trending tracks dynamically with reliable image fallback
@@ -186,7 +191,7 @@ export const LandingPage: React.FC = () => {
       }
 
       const { w, h } = dimRef.current;
-      const isDesktopMode = w >= 1024 || (w >= 768 && h >= 600);
+      const isDesktopMode = (w >= 1024 && h >= 520) || (w >= 768 && h >= 600);
       const isLandscapeMode = !isDesktopMode && w > h;
       const isPortraitMode = !isDesktopMode && !isLandscapeMode;
       const total = cards.length;
@@ -296,12 +301,14 @@ export const LandingPage: React.FC = () => {
           cardEl.style.zIndex = String(hoveredCard === i ? 40 : zIndex);
         }
       } else {
-        // ── DESKTOP: Half-circular orbital crown (100% identical to source design) ──
-        const cardBase = getDesktopCardSize(w);
+        // ── DESKTOP: Half-circular orbital crown (Proportionally adapted across all laptop & desktop screens) ──
+        const cardBase = getDesktopCardSize(w, h);
         const X_c = w / 2;
         const Y_c = h * 1.07;
-        const R_x = w * 0.54;
+        const R_x = Math.min(w * 0.54, 1150);
         const R_y = h * 0.79;
+        const lift = h < 780 ? Math.round((780 - h) * 0.12) : 0;
+        const yOffset = Math.min(28, h * 0.035) - lift;
 
         for (let i = 0; i < total; i++) {
           const cardEl = cardRefs.current[i];
@@ -314,7 +321,7 @@ export const LandingPage: React.FC = () => {
           hoverScaleRef.current[i] += (targetHoverScale - hoverScaleRef.current[i]) * 0.15;
 
           const x = X_c + R_x * Math.sin(phi);
-          const y = Y_c - R_y * Math.cos(phi) + Math.min(32, h * 0.035);
+          const y = Y_c - R_y * Math.cos(phi) + yOffset;
 
           const phiDeg = (phi * 180) / Math.PI;
           const absDeg = Math.abs(phiDeg);
@@ -512,7 +519,7 @@ export const LandingPage: React.FC = () => {
   if (isPortraitMobile) {
     return (
       <div
-        className="relative w-full h-[100dvh] min-h-[100dvh] bg-[#070707] text-white overflow-hidden select-none flex flex-col items-center justify-between px-4 sm:px-6 pt-3 sm:pt-4.5 pb-4 sm:pb-6"
+        className="relative w-full h-[100dvh] min-h-[100dvh] bg-[#070707] text-white overflow-y-auto overflow-x-hidden select-none flex flex-col items-center justify-between px-4 sm:px-6 pt-3 sm:pt-4.5 pb-4 sm:pb-6"
         style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
       >
         {/* Cinematic ambient background glow */}
@@ -700,7 +707,7 @@ export const LandingPage: React.FC = () => {
   if (isLandscapeMobile) {
     return (
       <div
-        className="relative w-full h-[100dvh] min-h-[100dvh] bg-[#070707] text-white overflow-hidden select-none flex flex-col justify-between items-center px-4 py-2 sm:py-3"
+        className="relative w-full h-[100dvh] min-h-[100dvh] bg-[#070707] text-white overflow-y-auto overflow-x-hidden select-none flex flex-col justify-between items-center px-4 py-2 sm:py-3"
         style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
       >
         {/* Cinematic ambient background glow */}
@@ -840,7 +847,7 @@ export const LandingPage: React.FC = () => {
   // ═════════════════════════════════════════════════════════════════════════
   // 3. DESKTOP: EXACT SOURCE ORBITAL CROWN LAYOUT (100% UNCHANGED)
   // ═════════════════════════════════════════════════════════════════════════
-  const desktopCardBase = getDesktopCardSize(viewport.w);
+  const desktopCardBase = getDesktopCardSize(viewport.w, viewport.h);
 
   return (
     <div
@@ -968,27 +975,27 @@ export const LandingPage: React.FC = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute inset-x-0 bottom-[8vh] sm:bottom-[12vh] md:bottom-14 flex flex-col items-center justify-center text-center z-30 pointer-events-none px-4 sm:px-6"
+        className="absolute inset-x-0 bottom-[4vh] sm:bottom-[5vh] lg:bottom-[6vh] flex flex-col items-center justify-center text-center z-30 pointer-events-none px-4 sm:px-6"
       >
-        <div className="max-w-[840px] space-y-3 sm:space-y-4">
+        <div className="max-w-[840px] space-y-2 sm:space-y-3 lg:space-y-4">
           <h1
             className="font-black text-white tracking-tight leading-[0.92] uppercase select-none drop-shadow-2xl"
-            style={{ fontSize: 'clamp(2.1rem, 6.8vw, 6.4rem)' }}
+            style={{ fontSize: 'clamp(2rem, min(6.2vw, 9.2vh), 5.8rem)' }}
           >
             Music
             <br />
             <span className="text-neutral-300">For everyone.</span>
           </h1>
 
-          <p className="text-[13px] sm:text-[15px] md:text-[17px] text-neutral-300 font-medium leading-relaxed max-w-[540px] mx-auto pt-0.5 sm:pt-1 drop-shadow-md">
+          <p className="text-[12.5px] sm:text-[14px] lg:text-[16px] text-neutral-300 font-medium leading-relaxed max-w-[540px] mx-auto pt-0.5 sm:pt-1 drop-shadow-md">
             Explore new music, save what you love, and make every listen your own.
           </p>
 
-          <div className="flex items-center justify-center gap-2.5 sm:gap-3 pt-2 sm:pt-3 pointer-events-auto flex-wrap">
+          <div className="flex items-center justify-center gap-2.5 sm:gap-3 pt-1.5 sm:pt-2.5 pointer-events-auto flex-wrap">
             <button
               id="landing-start-listening"
               onClick={() => navigate('/app')}
-              className="flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white hover:bg-neutral-100 text-black text-[13px] sm:text-[14px] font-bold rounded-full transition-all shadow-[0_8px_24px_rgba(255,255,255,0.08)] hover:shadow-[0_8px_28px_rgba(255,255,255,0.14)] hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3.5 bg-white hover:bg-neutral-100 text-black text-[13px] sm:text-[14px] font-bold rounded-full transition-all shadow-[0_8px_24px_rgba(255,255,255,0.08)] hover:shadow-[0_8px_28px_rgba(255,255,255,0.14)] hover:scale-105 active:scale-95 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-black text-black ml-0.5" />
               Start Listening
@@ -996,7 +1003,7 @@ export const LandingPage: React.FC = () => {
             <button
               id="landing-explore-music"
               onClick={() => navigate('/search')}
-              className="flex items-center gap-2 px-5 sm:px-7 py-3 sm:py-3.5 bg-black/50 hover:bg-white/[0.08] border border-white/20 hover:border-white/40 text-white text-[13px] sm:text-[14px] font-semibold rounded-full transition-all backdrop-blur-xl hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-5 sm:px-7 py-2.5 sm:py-3.5 bg-black/50 hover:bg-white/[0.08] border border-white/20 hover:border-white/40 text-white text-[13px] sm:text-[14px] font-semibold rounded-full transition-all backdrop-blur-xl hover:scale-105 active:scale-95 cursor-pointer"
             >
               Explore Music
             </button>

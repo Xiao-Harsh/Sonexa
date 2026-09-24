@@ -32,6 +32,11 @@ export const useKeyboardControls = () => {
         return;
       }
 
+      // Preserve browser history navigation shortcuts (Alt+ArrowLeft, Alt+ArrowRight, Cmd+ArrowLeft, Cmd+ArrowRight)
+      if (e.altKey || e.metaKey) {
+        return;
+      }
+
       // Only allow playback controls if there is a track loaded
       if (!activeTrack) return;
 

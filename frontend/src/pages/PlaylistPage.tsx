@@ -19,6 +19,14 @@ export const PlaylistPage: React.FC = () => {
     }
   }, [id, fetchPlaylistDetails]);
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/library');
+    }
+  };
+
   if (isLoading && !currentPlaylist) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-neutral-500 gap-3">
@@ -33,11 +41,11 @@ export const PlaylistPage: React.FC = () => {
       <div className="text-center py-24 space-y-4">
         <h2 className="text-xl font-semibold text-neutral-400">Playlist not found</h2>
         <button
-          onClick={() => navigate('/library')}
-          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 border border-white/10 rounded-xl text-xs font-semibold hover:border-white/20 transition-all cursor-pointer text-white"
+          onClick={handleBack}
+          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/10 rounded-xl text-xs font-semibold hover:border-white/20 transition-all cursor-pointer text-white active:scale-95 mx-auto"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Library
+          Go Back
         </button>
       </div>
     );
@@ -66,9 +74,10 @@ export const PlaylistPage: React.FC = () => {
     >
       <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 pb-6 border-b border-white/5 text-center sm:text-left">
         <button
-          onClick={() => navigate('/library')}
-          className="self-start sm:self-auto p-2.5 sm:p-3 bg-[#141414] border border-white/5 hover:border-white/10 rounded-xl text-neutral-400 hover:text-white transition-all cursor-pointer shrink-0"
-          title="Back to Library"
+          onClick={handleBack}
+          className="self-start sm:self-auto p-2.5 sm:p-3 bg-[#141414] hover:bg-neutral-800 border border-white/5 hover:border-white/10 rounded-xl text-neutral-400 hover:text-white transition-all cursor-pointer shrink-0 active:scale-95 shadow-sm"
+          title="Go Back"
+          aria-label="Go Back"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -78,10 +87,21 @@ export const PlaylistPage: React.FC = () => {
         </div>
 
         <div className="space-y-1.5 sm:space-y-2 flex-1 min-w-0">
-          <span className="text-[9px] sm:text-[10px] font-bold text-neutral-400 uppercase tracking-widest bg-white/5 border border-white/5 px-2.5 py-1 rounded-md">
-            Playlist
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1 sm:mt-2 truncate">
+          {/* Directory Breadcrumb */}
+          <div className="flex items-center justify-center sm:justify-start gap-1.5 text-[11px] font-semibold text-neutral-400">
+            <button
+              onClick={() => navigate('/library')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Library
+            </button>
+            <span className="text-neutral-600">/</span>
+            <span className="text-neutral-300">Playlists</span>
+            <span className="text-neutral-600">/</span>
+            <span className="text-white truncate max-w-[160px] sm:max-w-[240px]">{currentPlaylist.name}</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1 truncate">
             {currentPlaylist.name}
           </h1>
           <p className="text-neutral-500 text-xs font-medium">
@@ -133,28 +153,34 @@ export const PlaylistPage: React.FC = () => {
                       </button>
                     </td>
 
-                    <td className="py-2.5 sm:py-3 px-2 sm:px-4">
-                      <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
-                          {artworkUrl ? (
-                            <img src={artworkUrl} alt={track.title} className="object-cover w-full h-full" />
-                          ) : (
-                            <Music className="w-4 h-4 text-neutral-600" />
+                    <td className="py-2.5 sm:py-3 px-2 sm:px-4 min-w-0">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden shrink-0 flex items-center justify-center relative">
+                          <Music className="w-4 h-4 text-neutral-600 absolute inset-0 m-auto" />
+                          {artworkUrl && (
+                            <img
+                              src={artworkUrl}
+                              alt={track.title}
+                              className="object-cover w-full h-full relative z-10"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
                           )}
                         </div>
-                        <div className="text-left min-w-0 max-w-[140px] min-[380px]:max-w-[200px] sm:max-w-md overflow-hidden">
-                          <p className="font-semibold text-xs sm:text-sm text-white truncate group-hover:text-white transition-colors" title={track.title}>
-                            {track.title}
+                        <div className="text-left min-w-0 flex-1 overflow-hidden">
+                          <p className="font-semibold text-xs sm:text-sm text-white truncate group-hover:text-white transition-colors" title={track.title || 'Untitled Track'}>
+                            {track.title || 'Untitled Track'}
                           </p>
                           <p className="text-[10px] sm:text-xs text-neutral-400 truncate mt-0.5 md:hidden font-medium">
-                            {track.user.name}
+                            {track.user?.name || 'Artist'}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-2.5 sm:py-3 px-4 text-sm text-neutral-400 hidden md:table-cell">
-                      {track.user.name}
+                    <td className="py-2.5 sm:py-3 px-4 text-sm text-neutral-400 hidden md:table-cell truncate">
+                      {track.user?.name || 'Artist'}
                     </td>
 
                     <td className="py-2.5 sm:py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-neutral-500 font-medium">

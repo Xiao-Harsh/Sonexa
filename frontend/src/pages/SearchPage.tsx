@@ -114,29 +114,35 @@ const SearchTrackRow: React.FC<SearchTrackRowProps> = ({ track, index, onPlay })
       </td>
 
       {/* Title & Artwork */}
-      <td className="py-2.5 sm:py-3 px-2 sm:px-4">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
-            {artworkUrl ? (
-              <img src={artworkUrl} alt={track.title} className="object-cover w-full h-full" />
-            ) : (
-              <Music className="w-4 h-4 text-neutral-600" />
+      <td className="py-2.5 sm:py-3 px-2 sm:px-4 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neutral-900 border border-white/5 rounded-lg overflow-hidden shrink-0 flex items-center justify-center relative">
+            <Music className="w-4 h-4 text-neutral-600 absolute inset-0 m-auto" />
+            {artworkUrl && (
+              <img
+                src={artworkUrl}
+                alt={track.title}
+                className="object-cover w-full h-full relative z-10"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             )}
           </div>
-          <div className="text-left min-w-0 max-w-[140px] min-[380px]:max-w-[200px] sm:max-w-md overflow-hidden">
-            <p className={`font-semibold text-xs sm:text-sm truncate transition-colors ${isCurrent ? 'text-indigo-400' : 'text-white'}`} title={track.title}>
-              {track.title}
+          <div className="text-left min-w-0 flex-1 overflow-hidden">
+            <p className={`font-semibold text-xs sm:text-sm truncate transition-colors ${isCurrent ? 'text-indigo-400' : 'text-white'}`} title={track.title || 'Untitled Track'}>
+              {track.title || 'Untitled Track'}
             </p>
             <p className="text-[10px] sm:text-xs text-neutral-400 truncate mt-0.5 md:hidden font-medium">
-              {track.user.name}
+              {track.user?.name || 'Artist'}
             </p>
           </div>
         </div>
       </td>
 
       {/* Artist */}
-      <td className="py-2.5 sm:py-3 px-4 text-sm text-neutral-400 hidden md:table-cell">
-        {track.user.name}
+      <td className="py-2.5 sm:py-3 px-4 text-sm text-neutral-400 hidden md:table-cell truncate">
+        {track.user?.name || 'Artist'}
       </td>
 
       {/* Genre */}
@@ -295,19 +301,19 @@ export const SearchPage: React.FC = () => {
       title: 'Daily Mix 1',
       subtitle: 'The Weeknd, Drake, Post Malone & more',
       query: 'Weekly Trending',
-      image: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80',
+      image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1000&q=85',
     },
     {
       title: 'Daily Mix 2',
       subtitle: 'Arijit Singh, Prateek Kuhad, Anuv Jain & more',
       query: 'Arijit Singh',
-      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+      image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=1000&q=85',
     },
     {
       title: 'Daily Mix 3',
       subtitle: 'AP Dhillon, Diljit Dosanjh, Badshah & more',
       query: 'Punjabi Hits',
-      image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80',
+      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1000&q=85',
     },
   ];
 
@@ -436,7 +442,7 @@ export const SearchPage: React.FC = () => {
                 <span className="text-xs font-medium">Loading trending tracks...</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5">
                 {trendingTracks.slice(0, 5).map((track) => (
                   <TrackCard
                     key={track.id}
@@ -471,6 +477,9 @@ export const SearchPage: React.FC = () => {
                     src={mix.image}
                     alt={mix.title}
                     className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0" />
 

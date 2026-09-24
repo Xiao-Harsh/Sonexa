@@ -14,6 +14,7 @@ interface PlayerState {
   isRepeat: 'none' | 'all' | 'one';
   sleepTimerRemaining: number | null;
   setSleepTimer: (seconds: number | null) => void;
+  stopAndClose: () => void;
   
   setQueue: (tracks: Track[]) => void;
   playTrack: (track: Track) => void;
@@ -69,6 +70,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setQueue: (tracks) => set({ queue: tracks }),
   setSleepTimer: (seconds) => set({ sleepTimerRemaining: seconds }),
+  stopAndClose: () => set({ isPlaying: false, currentTrackIndex: -1, currentTime: 0, userSeekTime: null }),
 
   playTrack: (track) => {
     const { queue } = get();

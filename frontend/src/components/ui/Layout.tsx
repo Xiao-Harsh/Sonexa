@@ -10,7 +10,7 @@ import {
   Search,
   Play,
   LogOut,
-  Heart
+  Heart,
 } from 'lucide-react';
 import { AudioEngine } from '../music/AudioEngine';
 import { PlayerBar } from '../music/PlayerBar';
@@ -311,13 +311,15 @@ export const Layout: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           {/* MAIN CONTENT AREA */}
           <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 md:p-8 pt-16 sm:pt-20 md:pt-8 pb-44 sm:pb-36 md:pb-32 overscroll-contain">
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
+            <div className="max-w-[1800px] mx-auto w-full">
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </div>
           </main>
 
           {/* RIGHT SIDEBAR PANEL */}
-          <aside className="hidden lg:block w-80 shrink-0 bg-[#090909] border-l border-white/5 p-6 overflow-y-auto space-y-7 no-scrollbar pb-32">
+          <aside className="hidden xl:block w-72 2xl:w-80 shrink-0 bg-[#090909] border-l border-white/5 p-6 overflow-y-auto space-y-7 no-scrollbar pb-32">
             {/* Recently Played / User History */}
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
@@ -339,11 +341,17 @@ export const Layout: React.FC = () => {
                         onClick={() => playTrack(item)}
                       >
                         <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="w-10 h-10 bg-neutral-850 rounded-lg overflow-hidden shrink-0 border border-white/5 flex items-center justify-center">
-                            {item.artwork?.['150x150'] ? (
-                              <img src={item.artwork['150x150']} alt={item.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-sm">🎵</span>
+                          <div className="w-10 h-10 bg-neutral-850 rounded-lg overflow-hidden shrink-0 border border-white/5 flex items-center justify-center relative">
+                            <span className="text-sm absolute inset-0 m-auto flex items-center justify-center">🎵</span>
+                            {item.artwork?.['150x150'] && (
+                              <img
+                                src={item.artwork['150x150']}
+                                alt={item.title}
+                                className="w-full h-full object-cover relative z-10"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
                             )}
                           </div>
                           <div className="overflow-hidden text-left">
@@ -401,11 +409,17 @@ export const Layout: React.FC = () => {
                         <span className="text-xs font-mono text-neutral-500 shrink-0 w-5 text-center font-bold">
                           {`0${idx + 1}`}
                         </span>
-                        <div className="w-9 h-9 bg-neutral-850 rounded-lg overflow-hidden shrink-0 border border-white/5 flex items-center justify-center">
-                          {item.artwork?.['150x150'] ? (
-                            <img src={item.artwork['150x150']} alt={item.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-xs">🔥</span>
+                        <div className="w-9 h-9 bg-neutral-850 rounded-lg overflow-hidden shrink-0 border border-white/5 flex items-center justify-center relative">
+                          <span className="text-xs absolute inset-0 m-auto flex items-center justify-center">🔥</span>
+                          {item.artwork?.['150x150'] && (
+                            <img
+                              src={item.artwork['150x150']}
+                              alt={item.title}
+                              className="w-full h-full object-cover relative z-10"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
                           )}
                         </div>
                         <div className="overflow-hidden text-left">
