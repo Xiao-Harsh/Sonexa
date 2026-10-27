@@ -1,7 +1,24 @@
+# Build artifacts
 target/
-.git
+
+# Version control
+.git/
 .gitignore
+.gitattributes
+
+# Secrets - never include in Docker image
 .env
 .env.*
+
+# Documentation - not needed at runtime
 *.md
+
+# Maven wrapper JAR (not needed; Dockerfile uses system mvn)
 .mvn/wrapper/maven-wrapper.jar
+
+# IDE and OS artifacts
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store

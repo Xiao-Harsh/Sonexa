@@ -101,12 +101,22 @@ CREATE DATABASE music_player;
 
 ---
 
-## 🟢 Render Keep-Alive (24/7 Uptime)
+## ☁️ Hostless Cloud Deployment (Backend)
 
-To prevent the Render free-tier backend from spinning down after 15 minutes of inactivity:
-1. Set up a free HTTP monitor using an external service like **[UptimeRobot](https://uptimerobot.com)** or **[Cron-job.org](https://cron-job.org)**.
-2. Configure a `GET` request every **5 minutes** pointing to:
-   ```text
-   https://YOUR-RENDER-BACKEND.onrender.com/health
+Sonexa's backend runs on **[Hostless Cloud](https://hostless.cloud/)** as a Docker container using the included [`hostless.yaml`](hostless.yaml) and [`backend/Dockerfile`](backend/Dockerfile):
+
+1. **Architecture:** Containerized Spring Boot 3 on Java 17 with dynamic `$PORT` binding and `-XX:MaxRAMPercentage=70.0`.
+2. **Health Probe:** Configured to probe `GET /health`, returning `{"status": "ok"}` with HTTP 200.
+3. **Always-On:** Hostless free tier maintains an active container with no idle spin-down.
+
+## 🌐 Vercel Deployment (Frontend)
+
+The React frontend deploys to **[Vercel](https://vercel.com)** with zero extra config:
+
+1. Import the repo in Vercel, set **Root Directory** to `frontend`.
+2. Build command: `npm run build` | Output directory: `dist`.
+3. Add one environment variable in **Project Settings → Environment Variables**:
    ```
-3. The endpoint returns `{"status": "ok"}` with HTTP 200 without database overhead, keeping your server warm 24/7.
+   VITE_API_URL = https://your-backend.hostless.app/api
+   ```
+4. The [`vercel.json`](frontend/vercel.json) already handles SPA client-side routing.
