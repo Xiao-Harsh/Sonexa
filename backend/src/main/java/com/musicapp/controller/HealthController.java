@@ -10,7 +10,7 @@ import java.util.Map;
 @RestController
 public class HealthController {
 
-    @GetMapping({"/health", "/api/health"})
+    @GetMapping({"/", "/health", "/api/health"})
     public ResponseEntity<Map<String, String>> getHealth() {
         return ResponseEntity.ok(Collections.singletonMap("status", "ok"));
     }
