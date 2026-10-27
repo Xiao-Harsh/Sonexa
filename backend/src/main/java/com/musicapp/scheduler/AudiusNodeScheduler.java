@@ -29,7 +29,9 @@ public class AudiusNodeScheduler {
 
     @PostConstruct
     public void init() {
-        refreshNodePool();
+        Thread thread = new Thread(this::refreshNodePool, "audius-node-refresher");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Scheduled(fixedRate = 1800000)

@@ -75,11 +75,9 @@ public class SecurityConfig {
             for (String origin : allowedOrigins.split(",")) {
                 String trimmed = origin.trim();
                 if (!trimmed.isEmpty()) {
-                    allowedPatterns.add(trimmed);
-                    if (trimmed.endsWith("/")) {
-                        allowedPatterns.add(trimmed.substring(0, trimmed.length() - 1));
-                    } else {
-                        allowedPatterns.add(trimmed + "/");
+                    String canonical = trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+                    if (!allowedPatterns.contains(canonical)) {
+                        allowedPatterns.add(canonical);
                     }
                 }
             }
