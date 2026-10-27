@@ -2,15 +2,10 @@
 build:
   system: "docker"
   dockerfile_path: "./backend/Dockerfile"
-  build_context_directory: "./backend"
-
-run:
-  working_directory: "/app"
+  working_directory: "/backend"
+  build_context_directory: "/backend"
 
 health_check:
   type: http
   http_path: "/health"
-  initial_delay_in_seconds: 30
-  interval_in_seconds: 15
-  timeout_in_seconds: 10
-  failure_threshold: 3
+  interval_in_seconds: 30
