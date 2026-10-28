@@ -27,7 +27,7 @@ public class AudiusNodeScheduler {
         this.redisTemplate = redisTemplate;
     }
 
-    @PostConstruct
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
     public void init() {
         Thread thread = new Thread(this::refreshNodePool, "audius-node-refresher");
         thread.setDaemon(true);
