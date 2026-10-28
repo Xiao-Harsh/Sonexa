@@ -68,8 +68,7 @@ public class SecurityConfig {
             "http://localhost:*",
             "http://127.0.0.1:*",
             "https://sonexamusic.vercel.app",
-            "https://*.hostless.app",
-            "https://*.hostless.cloud"
+            "https://*.onrender.com"
         ));
         
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
