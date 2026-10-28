@@ -67,7 +67,8 @@ public class SecurityConfig {
         java.util.List<String> allowedPatterns = new java.util.ArrayList<>(Arrays.asList(
             "http://localhost:*",
             "http://127.0.0.1:*",
-            "https://*.vercel.app",
+            "https://sonexamusic.vercel.app",
+            "https://*.hostless.app",
             "https://*.hostless.cloud"
         ));
         

@@ -196,6 +196,19 @@ public class LibraryController {
     @Transactional
     public ResponseEntity<Map<String, Object>> logHistory(@Valid @RequestBody TrackRequest request) {
         User user = getCurrentUser();
+
+        // Deduplicate: If this track was logged by the user in the last minute, refresh playedAt instead of inserting a new row
+        java.util.Optional<ListeningHistory> recent = listeningHistoryRepository
+                .findFirstByUserAndAudiusTrackIdOrderByPlayedAtDesc(user, request.getAudiusTrackId());
+
+        if (recent.isPresent() && recent.get().getPlayedAt() != null &&
+                recent.get().getPlayedAt().isAfter(java.time.LocalDateTime.now().minusMinutes(1))) {
+            ListeningHistory existing = recent.get();
+            existing.setPlayedAt(java.time.LocalDateTime.now());
+            ListeningHistory saved = listeningHistoryRepository.save(existing);
+            return ResponseEntity.ok(buildSuccessResponse(saved));
+        }
+
         ListeningHistory history = new ListeningHistory();
         history.setUser(user);
         history.setAudiusTrackId(request.getAudiusTrackId());

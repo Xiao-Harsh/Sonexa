@@ -95,6 +95,9 @@ public class AuthControllerTest {
                 .andExpect(header().exists("Set-Cookie"));
     }
 
+    @Autowired
+    private com.musicapp.security.JwtUtil jwtUtil;
+
     @Test
     public void testLoginBadCredentials() throws Exception {
         LoginRequest request = new LoginRequest();
@@ -107,5 +110,39 @@ public class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.message").value("Invalid email or password"));
+    }
+
+    @Test
+    public void testRefreshTokenSuccess() throws Exception {
+        User user = new User();
+        user.setEmail("refresh@example.com");
+        user.setUsername("refreshuser");
+        user.setPasswordHash(passwordEncoder.encode("password123"));
+        userRepository.save(user);
+
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("refreshToken", refreshToken);
+
+        mockMvc.perform(post("/api/auth/refresh")
+                .cookie(cookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.user.email").value("refresh@example.com"));
+    }
+
+    @Test
+    public void testRefreshTokenMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    public void testLogout() throws Exception {
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(header().exists("Set-Cookie"));
     }
 }

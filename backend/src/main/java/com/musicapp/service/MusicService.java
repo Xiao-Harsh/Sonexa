@@ -1,6 +1,8 @@
 package com.musicapp.service;
 
 import com.musicapp.client.AudiusClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class MusicService {
+
+    private static final Logger log = LoggerFactory.getLogger(MusicService.class);
 
     private final AudiusClient audiusClient;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -30,17 +34,17 @@ public class MusicService {
                 return cachedData;
             }
         } catch (Exception e) {
-            // Redis error fallback
+            log.warn("Redis cache read failed for key [{}]: {}", cacheKey, e.getMessage());
         }
 
         String path = String.format("/v1/tracks/search?query=%s&limit=%d&offset=%d", query, finalLimit, finalOffset);
         Map<String, Object> apiResponse = audiusClient.get(path, Map.class);
-        
+
         if (apiResponse != null) {
             try {
                 redisTemplate.opsForValue().set(cacheKey, apiResponse, 10, TimeUnit.MINUTES);
             } catch (Exception e) {
-                // Redis error fallback
+                log.warn("Redis cache write failed for key [{}]: {}", cacheKey, e.getMessage());
             }
         }
 
@@ -60,7 +64,7 @@ public class MusicService {
                 return cachedData;
             }
         } catch (Exception e) {
-            // Redis error fallback
+            log.warn("Redis cache read failed for key [{}]: {}", cacheKey, e.getMessage());
         }
 
         StringBuilder pathBuilder = new StringBuilder("/v1/tracks/trending?");
@@ -80,7 +84,7 @@ public class MusicService {
             try {
                 redisTemplate.opsForValue().set(cacheKey, apiResponse, 15, TimeUnit.MINUTES);
             } catch (Exception e) {
-                // Redis error fallback
+                log.warn("Redis cache write failed for key [{}]: {}", cacheKey, e.getMessage());
             }
         }
 
@@ -97,7 +101,7 @@ public class MusicService {
                 return cachedData;
             }
         } catch (Exception e) {
-            // Redis error fallback
+            log.warn("Redis cache read failed for key [{}]: {}", cacheKey, e.getMessage());
         }
 
         String path = "/v1/tracks/" + trackId;
@@ -107,7 +111,7 @@ public class MusicService {
             try {
                 redisTemplate.opsForValue().set(cacheKey, apiResponse, 60, TimeUnit.MINUTES);
             } catch (Exception e) {
-                // Redis error fallback
+                log.warn("Redis cache write failed for key [{}]: {}", cacheKey, e.getMessage());
             }
         }
 

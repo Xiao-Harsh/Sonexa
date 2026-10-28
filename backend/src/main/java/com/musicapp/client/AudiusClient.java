@@ -1,5 +1,6 @@
 package com.musicapp.client;
 
+import com.musicapp.exception.AudiusNetworkException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,7 +80,7 @@ public class AudiusClient {
             log.error("Fallback to https://api.audius.co also failed: {}", e.getMessage());
         }
 
-        throw new RuntimeException("All healthy Audius nodes failed to respond. Audius network is currently unreachable.");
+        throw new AudiusNetworkException("All healthy Audius nodes failed to respond. Audius network is currently unreachable.");
     }
 
     public String getStreamUrl(String trackId) {
