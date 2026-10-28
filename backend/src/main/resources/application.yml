@@ -7,12 +7,18 @@ spring:
     name: backend
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:music_player}?createDatabaseIfNotExist=true&useSSL=${DB_USE_SSL:true}&enabledTLSProtocols=TLSv1.2,TLSv1.3&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:music_player}?useSSL=${DB_USE_SSL:true}&enabledTLSProtocols=TLSv1.2,TLSv1.3&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${DB_USER:root}
     password: ${DB_PASS:}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 20000
+      initialization-fail-timeout: 0
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: ${SHOW_SQL:false}

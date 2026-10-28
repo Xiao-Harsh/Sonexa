@@ -4,3 +4,8 @@ build:
   dockerfile_path: "./backend/Dockerfile"
   working_directory: "/backend"
   build_context_directory: "/backend"
+
+health_check:
+  type: http
+  http_path: "/health"
+  interval_in_seconds: 60
