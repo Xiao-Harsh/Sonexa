@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 10000 8080
 ENV SPRING_PROFILES_ACTIVE=prod
-ENTRYPOINT ["sh", "-c", "./keepalive.sh"]
+COPY keepalive.sh .\nRUN chmod +x keepalive.sh\nENTRYPOINT ["sh", "-c", "./keepalive.sh"]
