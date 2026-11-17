@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 10000 8080
 ENV SPRING_PROFILES_ACTIVE=prod
-ENTRYPOINT ["sh", "-c", "java -XX:InitialRAMPercentage=40.0 -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Dserver.port=${PORT:-10000} -Djava.security.egd=file:/dev/./urandom -Djava.net.preferIPv4Stack=true -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "./keepalive.sh"]
